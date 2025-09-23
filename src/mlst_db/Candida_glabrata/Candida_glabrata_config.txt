@@ -1,0 +1,9 @@
+[loci]
+FKS	mlst_db/Candida_glabrata/Candida_glabrata_FKS.tfa
+LEU2	mlst_db/Candida_glabrata/Candida_glabrata_LEU2.tfa
+NMT1	mlst_db/Candida_glabrata/Candida_glabrata_NMT1.tfa
+TRP1	mlst_db/Candida_glabrata/Candida_glabrata_TRP1.tfa
+UGP1	mlst_db/Candida_glabrata/Candida_glabrata_UGP1.tfa
+URA3	mlst_db/Candida_glabrata/Candida_glabrata_URA3.tfa
+[profile]
+profile	mlst_db/Candida_glabrata/Candida_glabrata_profile.txt

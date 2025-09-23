@@ -1,0 +1,10 @@
+[loci]
+aroC	mlst_db/Salmonella_enterica/Salmonella_enterica_aroC.tfa
+dnaN	mlst_db/Salmonella_enterica/Salmonella_enterica_dnaN.tfa
+hemD	mlst_db/Salmonella_enterica/Salmonella_enterica_hemD.tfa
+hisD	mlst_db/Salmonella_enterica/Salmonella_enterica_hisD.tfa
+purE	mlst_db/Salmonella_enterica/Salmonella_enterica_purE.tfa
+sucA	mlst_db/Salmonella_enterica/Salmonella_enterica_sucA.tfa
+thrA	mlst_db/Salmonella_enterica/Salmonella_enterica_thrA.tfa
+[profile]
+profile	mlst_db/Salmonella_enterica/Salmonella_enterica_profile.txt

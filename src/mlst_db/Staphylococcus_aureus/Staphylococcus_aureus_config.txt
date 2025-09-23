@@ -1,0 +1,10 @@
+[loci]
+arcC	mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_arcC.tfa
+aroE	mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_aroE.tfa
+glpF	mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_glpF.tfa
+gmk	mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_gmk.tfa
+pta	mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_pta.tfa
+tpi	mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_tpi.tfa
+yqiL	mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_yqiL.tfa
+[profile]
+profile	mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_profile.txt

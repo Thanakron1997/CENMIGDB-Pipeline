@@ -1,0 +1,10 @@
+[loci]
+adhP	mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_adhP.tfa
+pheS	mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_pheS.tfa
+atr	mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_atr.tfa
+glnA	mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_glnA.tfa
+sdhA	mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_sdhA.tfa
+glcK	mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_glcK.tfa
+tkt	mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_tkt.tfa
+[profile]
+profile	mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_profile.txt

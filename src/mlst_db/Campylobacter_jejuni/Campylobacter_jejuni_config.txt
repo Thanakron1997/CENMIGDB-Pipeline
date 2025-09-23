@@ -1,0 +1,10 @@
+[loci]
+aspA	mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_aspA.tfa
+glnA	mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_glnA.tfa
+gltA	mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_gltA.tfa
+glyA	mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_glyA.tfa
+pgm	mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_pgm.tfa
+tkt	mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_tkt.tfa
+uncA	mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_uncA.tfa
+[profile]
+profile	mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_profile.txt

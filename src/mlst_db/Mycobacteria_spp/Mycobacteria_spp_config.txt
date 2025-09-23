@@ -1,0 +1,11 @@
+[loci]
+S14Z	mlst_db/Mycobacteria_spp/Mycobacteria_spp_S14Z.tfa
+L35	mlst_db/Mycobacteria_spp/Mycobacteria_spp_L35.tfa
+S19	mlst_db/Mycobacteria_spp/Mycobacteria_spp_S19.tfa
+L19	mlst_db/Mycobacteria_spp/Mycobacteria_spp_L19.tfa
+S12	mlst_db/Mycobacteria_spp/Mycobacteria_spp_S12.tfa
+S8	mlst_db/Mycobacteria_spp/Mycobacteria_spp_S8.tfa
+L16	mlst_db/Mycobacteria_spp/Mycobacteria_spp_L16.tfa
+S7	mlst_db/Mycobacteria_spp/Mycobacteria_spp_S7.tfa
+[profile]
+profile	mlst_db/Mycobacteria_spp/Mycobacteria_spp_profile.txt
