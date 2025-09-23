@@ -5,16 +5,16 @@ import os
 
 class errorsLog:
     def __init__(self,
-                logFile: str = None,
+                logFile: str = "",
                 ):
-        if logFile:
+        if logFile != "":
             self.log_file_path = logFile
         else:
             main = os.path.dirname(os.path.realpath(__file__)) + '/'
             with open("config.json", 'r') as f:
                 config = json.load(f)
                 config = config["errors"]
-                self.log_file_path = os.path.join(main,config["logFIle"])
+            self.log_file_path = os.path.join(main,config["logFIle"])
 
     def error_logs(self,cmd,result):
         try:

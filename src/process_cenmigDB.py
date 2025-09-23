@@ -1,12 +1,9 @@
 import os
+import json
 import pymongo
 import pandas as pd
-import socket
-from dotenv import load_dotenv
 from datetime import datetime
-# from datetime import timedelta,datetime
 from gridfs import GridFS
-import json
 from src.errors import errorsLog
 
 class cenmigDBMetaData():
@@ -17,6 +14,7 @@ class cenmigDBMetaData():
         with open("config.json", 'r') as f:
             config = json.load(f)
             config = config["cenmigDB"]
+        self.verbose = config["verbose"]
         self.keepLog = config["keepLog"]
         self.upsert = config["upsert"]
         self.index_column = config["index_column"]
@@ -33,8 +31,13 @@ class cenmigDBMetaData():
         db = client['update_data']
         metadata_database = db["update_date"]
         data = metadata_database.find_one(sort=[('_id', -1)])
-        formatted_date = data['dateField'].strftime('%Y/%m/%d')
-        return formatted_date
+        if data and 'dateField' in data:
+            formatted_date = data['dateField'].strftime('%Y/%m/%d')
+            return formatted_date
+        else:
+            if self.verbose:
+                print("No Data Found!")
+            return "1999/01/01"
     
     def update_date(self,formatted_date):
         client = self.connect_mongodb()
@@ -76,8 +79,10 @@ class cenmigDBMetaData():
                 dictMain.update(point_data)
             metadata_database.update_one({self.index_column : str(dictMain[self.index_column])}, {'$set' : dictMain}, upsert= self.upsert)
         except Exception as e:
+            if self.verbose:
+                print(f"Error in update_metadata_one : {e}",e)
             if self.keepLog:
-                self.errorsLogFun.error_logs_try("Error in updateMlst_Tb_ResfinderOne : ",e)
+                self.errorsLogFun.error_logs_try("Error in update_metadata_one : ",e)
 
     def update_mlst_resistance_one(self,df_all_mlst, df_all_resfinder, df_all_pointfinder,df_all_tb_profiler):
         try:
@@ -127,18 +132,14 @@ class cenmigDBMetaData():
                     metadata_database_tbpro.update_one({self.index_column: str(row[self.index_column])}, {'$set': update_dict}, upsert=self.upsert)
 
         except Exception as e:
+            if self.verbose:
+                print(f"Error in update_mlst_resistance_one : {e}",e)
             if self.keepLog:
-                self.errorsLogFun.error_logs_try("Error in updateMlst_Tb_ResfinderOne : ",e)
+                self.errorsLogFun.error_logs_try("Error in update_mlst_resistance_one : ",e)
 
-    def update_record(self,df_update_metadata):
+    def update_record_by_csv(self,df_update_metadata):
         client = self.connect_mongodb()
         db = client['metadata']
-        collection_names = db.list_collection_names()
-        # If the connection is successful, the collection_names will contain the list of collections in the 'test' database
-        if collection_names:
-            print("Connection to 'cenmigDB' database successful.")
-        else:
-            print("Connection to 'cenmigDB' database failed.")
         metadata_database = db["bacteria"]
         data = metadata_database.find({}, {'_id': 0})
         data = pd.DataFrame(data)
@@ -146,7 +147,8 @@ class cenmigDBMetaData():
         list_cenmigID_update = list(cenmigID_update)
         new_metadata_old = data[data['cenmigID'].isin(list_cenmigID_update)]
         row_count = df_update_metadata.shape[0]
-        print(f"New data to update: {row_count} rows")
+        if self.verbose:
+            print(f"New data to update: {row_count} rows")
         for _ , row in df_update_metadata.iterrows():
             update_dict = row.dropna(how ='all')
             if '_id' in update_dict.index:
@@ -154,25 +156,22 @@ class cenmigDBMetaData():
             update_dict = update_dict.to_dict()
             metadata_database.update_one({self.index_column : str(row[self.index_column])}, {'$set' : update_dict}, upsert= self.upsert)
         new_metadata_old.to_csv(".old_metadata.csv",index=False)
-        print("Old Metadata Saved!")
-        print('Update data to MongoDB Completed')
+        if self.verbose:
+            print("Old Metadata Saved!")
+            print('Update data to MongoDB Completed')
 
     def del_records_by_csv(self,csv_file_delete):
         client = self.connect_mongodb()
         db = client['metadata']
-        collection_names = db.list_collection_names()
-        # If the connection is successful, the collection_names will contain the list of collections in the 'test' database
-        if collection_names:
-            print("Connection to 'cenmigDB' database successful.")
-        else:
-            print("Connection to 'cenmigDB' database failed.")
         metadata_database = db["bacteria"]
-        data = metadata_database.find({}, {'_id': 0})
+        data_cursor = metadata_database.find({}, {'_id': 0})
+        data = pd.DataFrame(data_cursor)
         cenmigID_update = csv_file_delete['cenmigID'].dropna()
         list_cenmigID_update = list(cenmigID_update)
         new_metadata_old = data[~data['cenmigID'].isin(list_cenmigID_update)]
         row_count = csv_file_delete.shape[0]
-        print(f"Deleting Data: {row_count} rows")
+        if self.verbose:
+            print(f"Deleting Data: {row_count} rows")
         for _ , row in csv_file_delete.iterrows():
             try:
                 update_dict = row.dropna(how ='all')
@@ -184,7 +183,8 @@ class cenmigDBMetaData():
                 print("Error! -> :",e)
                 print("No {} Record in database".format(row[self.index_column]))
         new_metadata_old.to_csv(".old_for_delete_metadata.csv",index=False)
-        print("Deleted Data Completed!")
+        if self.verbose:
+            print("Deleted Data Completed!")
 
 class cenmigDBGridFS():
     def __init__(self,
@@ -193,11 +193,10 @@ class cenmigDBGridFS():
         with open("config.json", 'r') as f:
             config = json.load(f)
             config = config["cenmigDB"]
-        cenmigDB = cenmigDBMetaData()
-        self.connect_mongodb = cenmigDB.connect_mongodb()
+        self.cenmigDB = cenmigDBMetaData()
     
     def update_item_to_db(self,file_name,location):
-        client = self.connect_mongodb()
+        client = self.cenmigDB.connect_mongodb()
         db = client['sequence']
         fs = GridFS(db)
         pathFile = os.path.join(location,str(file_name))
@@ -207,7 +206,7 @@ class cenmigDBGridFS():
         return file_id
 
     def get_item_from_db(self,file_name,location):
-        client = self.connect_mongodb()
+        client = self.cenmigDB.connect_mongodb()
         db = client['sequence']
         fs = GridFS(db)
         file_doc = fs.find_one({"filename": file_name})

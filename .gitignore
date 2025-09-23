@@ -206,6 +206,8 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+# VScode
+.vscode/
 # CENMIGDB
 config.json
 src/test*
@@ -214,3 +216,4 @@ proc/*
 test*
 src/mlst_db/*
 src/krocus_db/*
+src/mlst_db/Staphylococcus_aureus/*
