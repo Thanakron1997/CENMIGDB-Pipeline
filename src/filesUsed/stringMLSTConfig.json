@@ -1,0 +1,236 @@
+{
+    "Staphylococcus_aureus": {
+        "configFile": "mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_config.txt",
+        "path": "mlst_db/Staphylococcus_aureus/Staphylococcus_aureus",
+        "ker": "35",
+        "download": [
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_saureus_seqdef/schemes/1/profiles_csv",
+                "file_name": "mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_profile.txt"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_saureus_seqdef/loci/arcC/alleles_fasta",
+                "file_name": "mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_arcC.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_saureus_seqdef/loci/aroE/alleles_fasta",
+                "file_name": "mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_aroE.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_saureus_seqdef/loci/glpF/alleles_fasta",
+                "file_name": "mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_glpF.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_saureus_seqdef/loci/gmk/alleles_fasta",
+                "file_name": "mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_gmk.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_saureus_seqdef/loci/pta/alleles_fasta",
+                "file_name": "mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_pta.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_saureus_seqdef/loci/tpi/alleles_fasta",
+                "file_name": "mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_tpi.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_saureus_seqdef/loci/yqiL/alleles_fasta",
+                "file_name": "mlst_db/Staphylococcus_aureus/Staphylococcus_aureus_yqiL.tfa"
+            }
+        ]
+    },
+    "Campylobacter_jejuni": {
+        "configFile": "mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_config.txt",
+        "path": "mlst_db/Campylobacter_jejuni/Campylobacter_jejuni",
+        "ker": "35",
+        "download": [
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_campylobacter_seqdef/schemes/1/profiles_csv",
+                "file_name": "mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_profile.txt"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_campylobacter_seqdef/loci/aspA/alleles_fasta",
+                "file_name": "mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_aspA.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_campylobacter_seqdef/loci/glnA/alleles_fasta",
+                "file_name": "mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_glnA.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_campylobacter_seqdef/loci/gltA/alleles_fasta",
+                "file_name": "mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_gltA.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_campylobacter_seqdef/loci/glyA/alleles_fasta",
+                "file_name": "mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_glyA.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_campylobacter_seqdef/loci/pgm/alleles_fasta",
+                "file_name": "mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_pgm.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_campylobacter_seqdef/loci/tkt/alleles_fasta",
+                "file_name": "mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_tkt.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_campylobacter_seqdef/loci/uncA/alleles_fasta",
+                "file_name": "mlst_db/Campylobacter_jejuni/Campylobacter_jejuni_uncA.tfa"
+            }
+        ]
+    },
+    "Candida_glabrata": {
+        "configFile": "mlst_db/Candida_glabrata/Candida_glabrata_config.txt",
+        "path": "mlst_db/Candida_glabrata/Candida_glabrata",
+        "ker": "35",
+        "download": [
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_cglabrata_seqdef/schemes/1/profiles_csv",
+                "file_name": "mlst_db/Candida_glabrata/Candida_glabrata_profile.txt"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_cglabrata_seqdef/loci/FKS/alleles_fasta",
+                "file_name": "mlst_db/Candida_glabrata/Candida_glabrata_FKS.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_cglabrata_seqdef/loci/LEU2/alleles_fasta",
+                "file_name": "mlst_db/Candida_glabrata/Candida_glabrata_LEU2.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_cglabrata_seqdef/loci/NMT1/alleles_fasta",
+                "file_name": "mlst_db/Candida_glabrata/Candida_glabrata_NMT1.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_cglabrata_seqdef/loci/TRP1/alleles_fasta",
+                "file_name": "mlst_db/Candida_glabrata/Candida_glabrata_TRP1.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_cglabrata_seqdef/loci/UGP1/alleles_fasta",
+                "file_name": "mlst_db/Candida_glabrata/Candida_glabrata_UGP1.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_cglabrata_seqdef/loci/URA3/alleles_fasta",
+                "file_name": "mlst_db/Candida_glabrata/Candida_glabrata_URA3.tfa"
+            }
+        ]
+    },
+    "Mycobacteria_spp": {
+        "configFile": "mlst_db/Mycobacteria_spp/Mycobacteria_spp_config.txt",
+        "path": "mlst_db/Mycobacteria_spp/Mycobacteria_spp",
+        "ker": "35",
+        "download": [
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/schemes/2/profiles_csv",
+                "file_name": "mlst_db/Mycobacteria_spp/Mycobacteria_spp_profile.txt"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/S14Z/alleles_fasta",
+                "file_name": "mlst_db/Mycobacteria_spp/Mycobacteria_spp_S14Z.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/L35/alleles_fasta",
+                "file_name": "mlst_db/Mycobacteria_spp/Mycobacteria_spp_L35.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/S19/alleles_fasta",
+                "file_name": "mlst_db/Mycobacteria_spp/Mycobacteria_spp_S19.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/L19/alleles_fasta",
+                "file_name": "mlst_db/Mycobacteria_spp/Mycobacteria_spp_L19.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/S12/alleles_fasta",
+                "file_name": "mlst_db/Mycobacteria_spp/Mycobacteria_spp_S12.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/S8/alleles_fasta",
+                "file_name": "mlst_db/Mycobacteria_spp/Mycobacteria_spp_S8.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/L16/alleles_fasta",
+                "file_name": "mlst_db/Mycobacteria_spp/Mycobacteria_spp_L16.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_mycobacteria_seqdef/loci/S7/alleles_fasta",
+                "file_name": "mlst_db/Mycobacteria_spp/Mycobacteria_spp_S7.tfa"
+            }
+        ]
+    },
+    "Salmonella_enterica": {
+        "configFile": "mlst_db/Salmonella_enterica/Salmonella_enterica_config.txt",
+        "path": "mlst_db/Salmonella_enterica/Salmonella_enterica",
+        "ker": "35",
+        "download": [
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_senterica_achtman_seqdef/schemes/2/profiles_csv",
+                "file_name": "mlst_db/Salmonella_enterica/Salmonella_enterica_profile.txt"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_senterica_achtman_seqdef/loci/aroC/alleles_fasta",
+                "file_name": "mlst_db/Salmonella_enterica/Salmonella_enterica_aroC.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_senterica_achtman_seqdef/loci/dnaN/alleles_fasta",
+                "file_name": "mlst_db/Salmonella_enterica/Salmonella_enterica_dnaN.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_senterica_achtman_seqdef/loci/hemD/alleles_fasta",
+                "file_name": "mlst_db/Salmonella_enterica/Salmonella_enterica_hemD.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_senterica_achtman_seqdef/loci/hisD/alleles_fasta",
+                "file_name": "mlst_db/Salmonella_enterica/Salmonella_enterica_hisD.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_senterica_achtman_seqdef/loci/purE/alleles_fasta",
+                "file_name": "mlst_db/Salmonella_enterica/Salmonella_enterica_purE.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_senterica_achtman_seqdef/loci/sucA/alleles_fasta",
+                "file_name": "mlst_db/Salmonella_enterica/Salmonella_enterica_sucA.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_senterica_achtman_seqdef/loci/thrA/alleles_fasta",
+                "file_name": "mlst_db/Salmonella_enterica/Salmonella_enterica_thrA.tfa"
+            }
+        ]
+    },
+    "Streptococcus_agalactiae": {
+        "configFile": "mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_config.txt",
+        "path": "mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae",
+        "ker": "35",
+        "download": [
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_sagalactiae_seqdef/schemes/1/profiles_csv",
+                "file_name": "mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_profile.txt"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_sagalactiae_seqdef/loci/adhP/alleles_fasta",
+                "file_name": "mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_adhP.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_sagalactiae_seqdef/loci/pheS/alleles_fasta",
+                "file_name": "mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_pheS.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_sagalactiae_seqdef/loci/atr/alleles_fasta",
+                "file_name": "mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_atr.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_sagalactiae_seqdef/loci/glnA/alleles_fasta",
+                "file_name": "mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_glnA.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_sagalactiae_seqdef/loci/sdhA/alleles_fasta",
+                "file_name": "mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_sdhA.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_sagalactiae_seqdef/loci/glcK/alleles_fasta",
+                "file_name": "mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_glcK.tfa"
+            },
+            {
+                "url": "https://rest.pubmlst.org/db/pubmlst_sagalactiae_seqdef/loci/tkt/alleles_fasta",
+                "file_name": "mlst_db/Streptococcus_agalactiae/Streptococcus_agalactiae_tkt.tfa"
+            }
+        ]
+    }
+}

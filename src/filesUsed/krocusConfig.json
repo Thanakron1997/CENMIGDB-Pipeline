@@ -1,0 +1,20 @@
+{
+    "'Streptococcus agalactiae'": {
+        "path" : "krocus_db/Streptococcus_agalactiae"
+    },
+    "'Salmonella enterica'": {
+        "path": "krocus_db/Salmonella_enterica"
+    },
+    "'Mycobacteria spp.'": {
+        "path": "krocus_db/Mycobacteria_spp"
+    },
+    "'Staphylococcus aureus'" : {
+        "path" : "krocus_db/Staphylococcus_aureus"
+    },
+    "'Candida glabrata'": {
+        "path" : "krocus_db/Candida_glabrata"
+    },
+    "'Campylobacter jejuni'": {
+        "path" : "krocus_db/Campylobacter_jejuni"
+    }
+}
