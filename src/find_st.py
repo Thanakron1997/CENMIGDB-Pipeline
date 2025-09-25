@@ -46,7 +46,7 @@ class findST():
                   "mlst_check_scheme":mlst_check_scheme}
         return scheme
     
-    def result_mlst(self,program: str,file_mlst_output_i: Path,id_i:str) -> pd.DataFrame:
+    def result_mlst(self,program: str | None ,file_mlst_output_i: Path,id_i:str) -> pd.DataFrame:
         try:
             df_mlst_raw_i = pd.DataFrame()
             if os.path.isfile(file_mlst_output_i):
@@ -100,7 +100,7 @@ class findST():
             df_mlst_raw_i['mlst_run_date'] = datetime.datetime.now().date()
             return df_mlst_raw_i
 
-    def run_stringMLST(self,seq_files: List,file_mlst_output_i :Path,id_i: str,stringmlst_db: Path) -> str:
+    def run_stringMLST(self,seq_files: List,file_mlst_output_i :Path,id_i: str,stringmlst_db: Path) -> str | None:
         if len(seq_files) == 1:
             try:
                 cmd_mlst_single = f"stringMLST.py --predict -s --prefix {stringmlst_db} -o {file_mlst_output_i} -1 {seq_files[0]}"
@@ -123,9 +123,9 @@ class findST():
         if os.path.exists(file_mlst_output_i):
             return "stringmlst"
         else:
-            return ""
+            return
         
-    def run_krocus(self,seq_files: List,file_mlst_output_i: Path,id_i: str,krocus_db: Path) -> str:
+    def run_krocus(self,seq_files: List,file_mlst_output_i: Path,id_i: str,krocus_db: Path) -> str | None:
         try:
             cmd_mlst_krocus = f"krocus {krocus_db} {seq_files[0]} -o {file_mlst_output_i}"
             result_krocus = subprocess.run(cmd_mlst_krocus, shell=True,capture_output=True)
@@ -138,9 +138,9 @@ class findST():
         if os.path.exists(file_mlst_output_i):
             return "krocus"
         else:
-            return ""
+            return
    
-    def run_mlst_check(self,seq_file: Path, file_mlst_output_i: Path, id_i: str,mlst_check_scheme: str) -> str:
+    def run_mlst_check(self,seq_file: Path, file_mlst_output_i: Path, id_i: str,mlst_check_scheme: str) -> str | None:
         try:
             cmd_mlst_fasta = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'sangerpathogens/mlst_check get_sequence_type -s "{mlst_check_scheme}" -o {file_mlst_output_i} {seq_file}'
             result_mlst_check = subprocess.run(cmd_mlst_fasta,shell=True,capture_output=True)
@@ -153,7 +153,8 @@ class findST():
         if os.path.exists(file_mlst_output_i):
             return "mlst_check"
         else:
-            return ""
+            
+            return
     
     def run_mlst_raw_seq(self,id_i: str,organism_i : str,seq_files: List,platform_i: str,output_dir_i: Path) -> pd.DataFrame:
         """
