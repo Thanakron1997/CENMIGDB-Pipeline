@@ -4,10 +4,8 @@ import json
 import os
 
 class errorsLog:
-    def __init__(self,
-                logFile: str = "",
-                ):
-        if logFile != "":
+    def __init__(self,logFile: str = ""):
+        if os.path.exists(logFile):
             self.log_file_path = logFile
         else:
             main = os.path.dirname(os.path.realpath(__file__)) + '/'
