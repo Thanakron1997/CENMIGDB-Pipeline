@@ -56,8 +56,7 @@ class updateResfinder():
              print("Download Phenotypes file for Resfinder Compeleted!")
 
 class updateKrocus():
-    def __init__(self,
-            ):
+    def __init__(self):
         self.main = os.path.dirname(os.path.realpath(__file__))
         with open("config.json", 'r') as f:
                 config = json.load(f)
