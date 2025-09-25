@@ -8,8 +8,11 @@ import re
 import gzip
 import random
 import zipfile
+from pathlib import Path
+from typing import List
 from src.errors import errorsLog
 from src.process_cenmigDB import cenmigDBGridFS
+
 class downloadSEQ():
     def __init__(self,
             ):
@@ -35,7 +38,6 @@ class downloadSEQ():
     def is_gz_file(self,file_path):
         _, file_extension = os.path.splitext(file_path)
         return file_extension.lower() == '.gz'
-
 
     def download_seq_fastq(self,id_i,platform_i,output_dir_i):
         sec_ran_reload = random.randint(2, self.randomSec)
@@ -147,14 +149,17 @@ class downloadSEQ():
             if self.verbose:
                 print(f"Can't download: {id_i}")
 
-    def download_seq_inhouse(self,id_i,lstFileName,output_dir_i):
+    def download_seq_inhouse(self,id_i: str,lstFileName: list,output_dir_i: Path) -> list[Path]:
+        """
+        Download sequences from inhouse db
+        """
         seq_files_list = []
         for fileSeq_i in lstFileName:
             getSeqResult = self.cenmigDBGFS.get_item_from_db(fileSeq_i,output_dir_i)
             seq_file_name_i = os.path.join(output_dir_i,str(fileSeq_i))
             if getSeqResult == True:
                 if self.is_gz_file(fileSeq_i):
-                    seqFASTQ = output_dir_i + '/' + fileSeq_i.split('.')[0] +".fastq"
+                    seqFASTQ = os.path.join(output_dir_i,f"{fileSeq_i.split('.')[0]}.fastq")
                     with gzip.open(seq_file_name_i, 'rb') as f_in:
                         with open(seqFASTQ, 'wb') as f_out:
                             shutil.copyfileobj(f_in, f_out)

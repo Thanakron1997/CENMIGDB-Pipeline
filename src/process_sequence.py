@@ -3,18 +3,21 @@ import json
 import shutil
 import pandas as pd
 import multiprocessing
-from tqdm import tqdm 
+from tqdm import tqdm
+from pathlib import Path
+from multiprocessing import Queue as MPQueue
+from typing import Callable, Any,List,Tuple
 from src.download_sequence import downloadSEQ
 from src.find_st import findST
 from src.errors import errorsLog
 from src.find_resistance  import findResistance
 from src.process_cenmigDB import cenmigDBMetaData
 
-def cleanDfList(results):
+def cleanDfList(results: List[List[pd.DataFrame]]) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     list_mlst_result = []
     list_resistance_result =[]
     list_pointmutation_result = []
-    list_tb_profiler = []
+    list_tb_profiler_result = []
     list_resistance_one_line = []
     list_pointmultation_one_line = []
     for list_df_i in results:
@@ -60,8 +63,7 @@ def cleanDfList(results):
     return df_all_mlst_result,df_all_resistance_result,df_all_pointmultation_result,df_all_tb_profiler_result,df_all_resistance_one_line,df_all_pointmultation_one_line
 
 class processRawSeqData():
-    def __init__(self,
-                 ):
+    def __init__(self):
         self.errorsLogFun = errorsLog()
         self.download = downloadSEQ()
         self.findst = findST()
@@ -78,7 +80,7 @@ class processRawSeqData():
         tmpProcessDir = config["tmpProcessDir"]
         self.tmpProcessDir = os.path.join(self.main,tmpProcessDir)
 
-    def process_data(self,args):
+    def process_data(self,args) -> list[pd.DataFrame]:
         try:
             index_i,df_i = args
             id_i = str(df_i['Run'][index_i])
@@ -93,12 +95,12 @@ class processRawSeqData():
             seq_files_list = self.download.download_seq_fastq(id_i,platform_i,output_dir_i)
             df_mlst_result = self.findst.run_mlst_raw_seq(id_i,organism_i,seq_files_list,platform_i,output_dir_i)
             df_resfinder_raw_i,df_pointfinder_raw_i,df_resfinder_line_i,df_pointfinder_line_i,df_tb_profiler = self.findresistance.process_raw_seq(id_i,organism_i,seq_files_list,platform_i,output_dir_i)
-            self.cenmigDB.updateMetadataOne(df_i,id_i,df_mlst_result,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
-            self.cenmigDB.updateMlst_Tb_ResfinderOne(df_mlst_result, df_resfinder_raw_i, df_pointfinder_raw_i,df_tb_profiler)
+            self.cenmigDB.update_metadata_one(df_i,id_i,df_mlst_result,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
+            self.cenmigDB.update_mlst_resistance_one(df_mlst_result, df_resfinder_raw_i, df_pointfinder_raw_i,df_tb_profiler)
             if self.removeDir:
                 if os.path.exists(output_dir_i):
                     shutil.rmtree(output_dir_i, ignore_errors = False)
-            return list(df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
+            return [df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i]
         
         except Exception as e:
             if self.keepLog:
@@ -109,16 +111,16 @@ class processRawSeqData():
             df_tb_profiler = pd.DataFrame()
             df_resfinder_line_i = pd.DataFrame()
             df_pointfinder_line_i = pd.DataFrame()
-            return list(df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
+            return [df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i]
     
-    def process_data_inhouse(self,args):
+    def process_data_inhouse(self,args) -> list[pd.DataFrame]:
         try:
-            index_i,df_i = args
-            id_i = str(df_i['Run'][index_i])
-            organism_i = df_i['Organism'][index_i]
-            platform_i = df_i['Platform'][index_i]
-            file_name_i = df_i['file_name'][index_i]
-            output_dir_i = os.path.join(self.tmpProcessDir,id_i)
+            index_i,row = args
+            id_i = str(row['Run'])
+            organism_i = row['Organism']
+            platform_i = row['Platform']
+            file_name_i = row['file_name']
+            output_dir_i = Path(os.path.join(self.tmpProcessDir,id_i))
             if pd.isna(platform_i) or platform_i == "":
                 platform_i = "illumina"
             if not os.path.exists(output_dir_i):
@@ -132,7 +134,7 @@ class processRawSeqData():
             if self.removeDir:
                 if os.path.exists(output_dir_i):
                     shutil.rmtree(output_dir_i, ignore_errors = False)
-            return list(df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
+            return [df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i]
         
         except Exception as e:
             if self.keepLog:
@@ -143,27 +145,27 @@ class processRawSeqData():
             df_tb_profiler = pd.DataFrame()
             df_resfinder_line_i = pd.DataFrame()
             df_pointfinder_line_i = pd.DataFrame()
-            return list(df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
+            return [df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i]
         
-    def worker_func(self,job_queue, result_queue,processfunction):
-        while True: # Get a job from the job queue
+    def worker_func(self,job_queue: MPQueue,result_queue: MPQueue,processfunction: Callable[[Any], list[pd.DataFrame]]):
+        while True:
             job = job_queue.get()
-            if job is None: # None is used as a sentinel to signal the worker to exit
+            if job is None:
                 break
-            result = processfunction(job) # Put the result in the result queue
+            result = processfunction(job)
             result_queue.put(result)
 
-    def multi_process_data(self,df_sequences,inhouse=False):
+    def multi_process_data(self,df_sequences: pd.DataFrame, inhouse: bool =False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         job_queue = multiprocessing.Queue()
         result_queue = multiprocessing.Queue()
-        results = [] # Collect results as they become available
+        results = []
         if inhouse:
             process_func = self.process_data_inhouse
         else:
             process_func = self.process_data
         pool = multiprocessing.Pool(processes=self.coreUsed, initializer=self.worker_func, initargs=(job_queue, result_queue,process_func)) 
         df_sra_index = df_sequences.index.tolist() # Get the DataFrame index as a list
-        jobs = [(sra_index, df_sequences) for sra_index in df_sra_index] # Enqueue jobs (each job is a tuple of sra_index and df_sra)
+        jobs = [(sra_index, df_sequences.loc[sra_index]) for sra_index in df_sra_index] # Enqueue jobs (each job is a tuple of sra_index and df_sra)
         with tqdm(total=len(jobs), desc="Processing sra data: ", ncols=70) as pbar:
             for job in jobs: # add job to queue the job will start but can add job
                 job_queue.put(job)

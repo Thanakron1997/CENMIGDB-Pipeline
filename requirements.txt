@@ -5,3 +5,4 @@ setuptools==80.9.0
 beautifulsoup4==4.13.5
 pandas==2.3.2
 pymongo==4.15.1
+tqdm==4.67.1

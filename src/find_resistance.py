@@ -4,6 +4,8 @@ import subprocess
 import pandas as pd
 import datetime
 import glob
+from pathlib import Path
+from typing import List,Dict,Tuple
 from src.errors import errorsLog
 
 class findResistance():
@@ -27,15 +29,14 @@ class findResistance():
         phenotypesData = phenotypesData[['Class','Phenotype']]
         self.phenotypesData = phenotypesData.drop_duplicates()
     
-    def get_scheme(self,organism_i):
+    def get_scheme(self,organism_i: str) -> str:
+        scheme_name = organism_i.lower()
         for key, values in self.schemeList.items():
             if any(x.lower() in organism_i.lower() for x in values):
                 scheme_name = key
-            else:  
-                scheme_name = organism_i.lower()
         return scheme_name
 
-    def result_resfinder(self,output_dir,id_i):
+    def result_resfinder(self,output_dir: Path,id_i: str) -> Tuple[pd.DataFrame, str, str]:
         try:
             file_sra_resfinder_raw_i = os.path.join(output_dir ,'ResFinder_results_tab.txt')
             if os.path.isfile(file_sra_resfinder_raw_i):
@@ -44,7 +45,7 @@ class findResistance():
                     df_sra_resfinder_raw_i.insert(0, 'cenmigID', id_i)
                     df_sra_resfinder_raw_i['resfinder_run_date'] = [datetime.datetime.now().date() for i in range(len(df_sra_resfinder_raw_i))] 
                     try:
-                        js_file = glob.glob(output_dir + '/*.json')
+                        js_file = glob.glob(os.path.join(output_dir,'/*.json'))
                         file_js_select = js_file[0]
                         with open(file_js_select) as file:
                             resfinder_detail = json.load(file)
@@ -83,7 +84,7 @@ class findResistance():
             resfinder_db_version = "NA"
             return df_sra_resfinder_raw_i,software_version,resfinder_db_version
 
-    def result_pointfinder(self,output_dir,id_i):
+    def result_pointfinder(self,output_dir: Path,id_i: str) -> Tuple[pd.DataFrame, str]:
         try:
             file_sra_pointfinder_raw_i = os.path.join(output_dir,'PointFinder_results.txt')
             if os.path.isfile(file_sra_pointfinder_raw_i):
@@ -92,7 +93,7 @@ class findResistance():
                     df_sra_pointfinder_raw_i.insert(0, 'cenmigID', id_i)
                     df_sra_pointfinder_raw_i['pointfinder_run_date'] = [datetime.datetime.now().date() for i in range(len(df_sra_pointfinder_raw_i))]
                     try:
-                        js_file = glob.glob(output_dir + '/*.json')
+                        js_file = glob.glob(os.path.join(output_dir,'/*.json'))
                         file_js_select = js_file[0]
                         with open(file_js_select) as file:
                             resfinder_detail = json.load(file)
@@ -102,7 +103,6 @@ class findResistance():
                     except:
                         point_db_version = "NA"
                         df_sra_pointfinder_raw_i['pointfinder_db_version'] = point_db_version
-                    
                 else:
                     df_sra_pointfinder_raw_i = pd.DataFrame([{'cenmigID':id_i}])
                     df_sra_pointfinder_raw_i['pointfinder_run_date'] = [datetime.datetime.now().date() for i in range(len(df_sra_pointfinder_raw_i))]
@@ -115,6 +115,7 @@ class findResistance():
                 point_db_version = "NA"
                 df_sra_pointfinder_raw_i['pointfinder_db_version'] = point_db_version
                 return df_sra_pointfinder_raw_i,point_db_version
+            
         except Exception as e:
             if self.keepLog:
                 self.errorsLogFun.error_logs_try(f"Error in get Result PointFinder : {id_i}",e)
@@ -122,7 +123,7 @@ class findResistance():
             point_db_version = "NA"
             return df_sra_pointfinder_raw_i,point_db_version
     
-    def to_one_line_resfinder_result(self,df_resfinder_raw_i,df_pointfinder_raw_i,id_i,software_version,resfinder_db_version,point_db_version):
+    def to_one_line_resfinder_result(self,df_resfinder_raw_i: pd.DataFrame,df_pointfinder_raw_i: pd.DataFrame,id_i: str,software_version: str,resfinder_db_version: str,point_db_version)-> Tuple[pd.DataFrame, pd.DataFrame]:
         try:
             if 'Phenotype' in df_resfinder_raw_i.columns:
                 df_resfinder_line_i = pd.merge(df_resfinder_raw_i,self.phenotypesData,on='Phenotype',how='left')
@@ -152,13 +153,14 @@ class findResistance():
             else:
                 df_pointfinder_line_i =  pd.DataFrame([{'cenmigID':id_i}])
                 df_pointfinder_line_i['pointfinder_db_version'] = point_db_version
+
         except Exception as e:
             if self.keepLog:
                 self.errorsLogFun.error_logs_try(f"Error in process to_one_line_resfinder_result pointfinder result : {id_i}",e)
             df_pointfinder_line_i = pd.DataFrame()
         return df_resfinder_line_i, df_pointfinder_line_i
     
-    def result_tbprofiler(self,output_dir,id_i):
+    def result_tbprofiler(self,output_dir: Path,id_i: str) -> pd.DataFrame:
         try:
             tb_profiler_js_file_select = os.path.join(output_dir,"results/tbprofiler.results.json")
             if os.path.isfile(tb_profiler_js_file_select):
@@ -205,18 +207,19 @@ class findResistance():
             else:
                 df_tb_profiler_raw_i = pd.DataFrame([{'cenmigID':id_i}])
                 return df_tb_profiler_raw_i
+            
         except Exception as e:
             if self.keepLog:
                 self.errorsLogFun.error_logs_try(f"Error in get Result TB profiler :{id_i}",e)
             df_tb_profiler_raw_i = pd.DataFrame()
             return df_tb_profiler_raw_i
     
-    def runResfinder(self,id_i,seq_files,output_dir,scheme,platform_i,raw_seq):
+    def runResfinder(self,id_i: str,seq_files: List,output_dir: Path,scheme: str,platform: str,raw_seq: bool) -> None:
             try:
                 if raw_seq:
                     base_cmd = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.resfinderVer} -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species'
                     if len(seq_files) == 1:
-                        if "nanopore" in platform_i.lower() or "oxford" in platform_i.lower():
+                        if "nanopore" in platform.lower() or "oxford" in platform.lower():
                             base_cmd += " --nanopore"
                         cmd_resfinder = f'{base_cmd} -ifq {seq_files[0]}'
                     elif len(seq_files) > 1:
@@ -229,46 +232,48 @@ class findResistance():
                 result_out = subprocess.run(cmd_resfinder, shell=True,capture_output=True)
                 if self.keepLog:
                     self.errorsLogFun.error_logs(cmd_resfinder,result_out)
+
             except Exception as e:
                 if self.keepLog:
                     self.errorsLogFun.error_logs_try(f"Error in Resfinder : {id_i}",e)
     
-    def runTbProfiler(self,platform_i,seq_files,output_dir,id_i):
+    def runTbProfiler(self,platform: str,seq_files: List,output_dir: Path,id_i: str) -> None:
         try:
-            if "pacbio" in platform_i.lower() or 'PACBIO_SMRT' in platform_i.lower():
+            if "pacbio" in platform.lower() or 'PACBIO_SMRT' in platform.lower():
                 tb_pro_platform = 'pacbio'
-            if "nanopore" in platform_i.lower() or "oxford" in platform_i.lower():
+            if "nanopore" in platform.lower() or "oxford" in platform.lower():
                 tb_pro_platform = 'nanopore'
             else:
                 tb_pro_platform = 'illumina'
-        
             if len(seq_files) == 1:
                 cmd_tb_profiler = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.tbprofilerVer} profile -t 4 --ram 5 --depth 10,10 --af 0.05,0.1 --sv_depth 10,10 --logging CRITICAL --platform {tb_pro_platform}  -1 {seq_files[0]} --dir {output_dir}'
             elif len(seq_files) > 1:
                 cmd_tb_profiler = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.tbprofilerVer} profile -t 4 --ram 5 --depth 10,10 --af 0.05,0.1 --sv_depth 10,10 --logging CRITICAL --platform {tb_pro_platform}  -1 {seq_files[0]} -2 {seq_files[0]} --dir {output_dir}'
+            else:
+                raise KeyError("No sequence files found!")
             tbprofilerOut = subprocess.run(cmd_tb_profiler, shell=True,capture_output=True)
             if self.keepLog:
                 self.errorsLogFun.error_logs(cmd_tb_profiler,tbprofilerOut)
+
         except Exception as e:
             if self.keepLog:
                 self.errorsLogFun.error_logs_try(f"Error in TB-Profiler: {id_i}",e)
    
-    def process_raw_seq(self,id_i,organism_i,seq_files_list,platform_i,output_dir_i):
+    def process_raw_seq(self,id_i: str,organism_i: str,seq_files_list: List,platform_i: str,output_dir_i: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         raw_seq = True
         scheme = self.get_scheme(organism_i)
-        self.runResfinder(id_i,seq_files_list,output_dir_i,scheme,platform_i,raw_seq)
+        self.runResfinder(id_i=id_i,seq_files=seq_files_list,output_dir=output_dir_i,scheme=scheme,platform=platform_i,raw_seq=raw_seq)
         df_resfinder_raw_i,software_version,resfinder_db_version = self.result_resfinder(output_dir_i,id_i)
         df_pointfinder_raw_i,point_db_version = self.result_pointfinder(output_dir_i,id_i)
         df_resfinder_line_i, df_pointfinder_line_i = self.to_one_line_resfinder_result(df_resfinder_raw_i,df_pointfinder_raw_i,id_i,software_version,resfinder_db_version,point_db_version)
         if scheme == "mycobacterium tuberculosis":
-            self.runTbProfiler(self,platform_i,seq_files_list,output_dir_i,id_i)
-            df_tb_profiler_raw_i = self.result_tbprofiler(self,output_dir_i,id_i)
+            self.runTbProfiler(platform_i,seq_files_list,output_dir_i,id_i)
+            df_tb_profiler_raw_i = self.result_tbprofiler(output_dir_i,id_i)
         else:
             df_tb_profiler_raw_i = pd.DataFrame()
-            
         return df_resfinder_raw_i,df_pointfinder_raw_i,df_resfinder_line_i,df_pointfinder_line_i,df_tb_profiler_raw_i
     
-    def process_assembly_seq(self,id_i,organism_i,seq_files_list,output_dir_i):
+    def process_assembly_seq(self,id_i: str,organism_i: str,seq_files_list: List,output_dir_i: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         raw_seq = False
         platform_i = ""
         scheme = self.get_scheme(organism_i)
@@ -278,11 +283,3 @@ class findResistance():
         df_resfinder_line_i, df_pointfinder_line_i = self.to_one_line_resfinder_result(df_resfinder_raw_i,df_pointfinder_raw_i,id_i,software_version,resfinder_db_version,point_db_version)
         df_tb_profiler_raw_i = pd.DataFrame()
         return df_resfinder_raw_i,df_pointfinder_raw_i,df_resfinder_line_i,df_pointfinder_line_i,df_tb_profiler_raw_i
-
-# if len(seq_files) == 1:
-#     if "nanopore" in platform_i.lower() or "oxford" in platform_i.lower():
-#         cmd_resfinder = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'genomicepidemiology/resfinder -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --nanopore --ignore_missing_species -ifq {seq_files[0]}'
-#     else:
-#         cmd_resfinder = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'genomicepidemiology/resfinder -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species -ifq {seq_files[0]}'
-# elif len(seq_files) > 1:
-#     cmd_resfinder = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'genomicepidemiology/resfinder -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species -ifq {seq_files[0]} {seq_files[1]}'
