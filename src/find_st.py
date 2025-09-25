@@ -4,6 +4,8 @@ import subprocess
 import json
 import os
 import re
+from typing import List,Dict
+from pathlib import Path
 from src.errors import errorsLog
 
 class findST():
@@ -23,22 +25,20 @@ class findST():
         self.gidDocker = config["gidDocker"]
         self.schemeList = config["schemeList"]
 
-    def get_scheme(self,organism_i):
+    def get_scheme(self,organism_i :str) -> Dict:
+        scheme_name = ""
         for key, values in self.schemeList.items():
             if any(x.lower() in organism_i.lower() for x in values):
                 scheme_name = key
-            else:  
-                scheme_name = None
-        
-        if scheme_name:
+        if scheme_name != "":
             stringmlst_db =   os.path.join(self.main,self.stringMlstDB[scheme_name])
             krocus_db = os.path.join(self.main,self.krocusDB[scheme_name])
             mlst_check_scheme = self.mlstCheckScheme[scheme_name]
         else:
             organism_i_re = organism_i.split(" ")[:2]
             organism_i_re = '_'.join(organism_i_re)
-            stringmlst_db = self.main + '/mlst_db/' + organism_i_re + '/' + organism_i_re
-            krocus_db = self.main + '/krocus_db/' + organism_i_re
+            stringmlst_db = os.path.join(self.main, 'mlst_db', organism_i_re, organism_i_re)
+            krocus_db = os.path.join(self.main, 'krocus_db', organism_i_re)
             mlst_check_scheme = organism_i
 
         scheme = {"stringmlst_db":stringmlst_db,
@@ -46,8 +46,9 @@ class findST():
                   "mlst_check_scheme":mlst_check_scheme}
         return scheme
     
-    def result_mlst(self,program,file_mlst_output_i,id_i):
+    def result_mlst(self,program: str,file_mlst_output_i: Path,id_i:str) -> pd.DataFrame:
         try:
+            df_mlst_raw_i = pd.DataFrame()
             if os.path.isfile(file_mlst_output_i):
                 if program == "krocus":
                     dict_result_krocus = {}
@@ -65,7 +66,7 @@ class findST():
                         for i in last_line_result_spit[2:9]:
                             allele_i = re.findall("[a-zA-Z]+",i)[0]
                             allele_locat = re.findall(r"\d+", i)[0]
-                        dict_result_krocus[allele_i] = allele_locat
+                            dict_result_krocus[allele_i] = allele_locat
                     df_sra_mlst_raw_i = pd.DataFrame([dict_result_krocus])
                     df_sra_mlst_raw_i['mlst_run_date'] = [datetime.datetime.now() for i in range(len(df_sra_mlst_raw_i))]
                 elif program == "stringmlst":
@@ -88,6 +89,7 @@ class findST():
                 df_mlst_raw_i = pd.DataFrame([{'cenmigID':id_i}])
                 df_mlst_raw_i['ST'] = "No MLST-Result-file"
                 df_mlst_raw_i['mlst_run_date'] = datetime.datetime.now().date()
+
             return df_mlst_raw_i
             
         except Exception as e:
@@ -98,7 +100,7 @@ class findST():
             df_mlst_raw_i['mlst_run_date'] = datetime.datetime.now().date()
             return df_mlst_raw_i
 
-    def run_stringMLST(self,seq_files,file_mlst_output_i,id_i,stringmlst_db):
+    def run_stringMLST(self,seq_files: List,file_mlst_output_i :Path,id_i: str,stringmlst_db: Path) -> str:
         if len(seq_files) == 1:
             try:
                 cmd_mlst_single = f"stringMLST.py --predict -s --prefix {stringmlst_db} -o {file_mlst_output_i} -1 {seq_files[0]}"
@@ -120,8 +122,10 @@ class findST():
         
         if os.path.exists(file_mlst_output_i):
             return "stringmlst"
+        else:
+            return ""
         
-    def run_krocus(self,seq_files,file_mlst_output_i,id_i,krocus_db):
+    def run_krocus(self,seq_files: List,file_mlst_output_i: Path,id_i: str,krocus_db: Path) -> str:
         try:
             cmd_mlst_krocus = f"krocus {krocus_db} {seq_files[0]} -o {file_mlst_output_i}"
             result_krocus = subprocess.run(cmd_mlst_krocus, shell=True,capture_output=True)
@@ -133,8 +137,10 @@ class findST():
 
         if os.path.exists(file_mlst_output_i):
             return "krocus"
+        else:
+            return ""
    
-    def run_mlst_check(self,seq_file,file_mlst_output_i,id_i,mlst_check_scheme):
+    def run_mlst_check(self,seq_file: Path, file_mlst_output_i: Path, id_i: str,mlst_check_scheme: str) -> str:
         try:
             cmd_mlst_fasta = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'sangerpathogens/mlst_check get_sequence_type -s "{mlst_check_scheme}" -o {file_mlst_output_i} {seq_file}'
             result_mlst_check = subprocess.run(cmd_mlst_fasta,shell=True,capture_output=True)
@@ -146,23 +152,32 @@ class findST():
         
         if os.path.exists(file_mlst_output_i):
             return "mlst_check"
+        else:
+            return ""
     
-    def run_mlst_raw_seq(self,id_i,organism_i,seq_files,platform_i,output_dir_i):
+    def run_mlst_raw_seq(self,id_i: str,organism_i : str,seq_files: List,platform_i: str,output_dir_i: Path) -> pd.DataFrame:
+        """
+        Run MLST by krocus or stringMLST
+        """
+
         scheme = self.get_scheme(organism_i)
-        file_mlst_output_i = os.path.join(output_dir_i,f"mlst_result_{id_i}.txt")
+        file_mlst_output_i = Path(os.path.join(output_dir_i,f"mlst_result_{id_i}.txt"))
         program = ""
         if "pacbio" in platform_i.lower() or 'PACBIO_SMRT' in platform_i.lower() or "nanopore" in platform_i.lower() or "oxford" in platform_i.lower():
-            program = self.run_krocus(seq_files,file_mlst_output_i,id_i,scheme["krocus_db"])
+            program = self.run_krocus(seq_files=seq_files,file_mlst_output_i=file_mlst_output_i,id_i=id_i,krocus_db=scheme["krocus_db"])
         else:
-            program = self.run_stringMLST(seq_files,file_mlst_output_i,id_i,scheme["stringmlst_db"])
-        
-        df_mlst_result = self.result_mlst(self,program,file_mlst_output_i,id_i)
+            program = self.run_stringMLST(seq_files=seq_files,file_mlst_output_i=file_mlst_output_i,id_i=id_i,stringmlst_db=scheme["stringmlst_db"])
+        df_mlst_result = self.result_mlst(program=program,file_mlst_output_i=file_mlst_output_i,id_i=id_i)
         return df_mlst_result
     
-    def run_mlst_assembly_seq(self,id_i,organism_i,seq_files,output_dir_i):
-        file_mlst_output_i = os.path.join(output_dir_i,f"mlst_result_{id_i}.txt")
+    def run_mlst_assembly_seq(self,id_i,organism_i:str,seq_file: Path,output_dir_i: Path) -> pd.DataFrame:
+        """
+        Run MLST by MLST Check
+        """
+
+        file_mlst_output_i = Path(os.path.join(output_dir_i,f"mlst_result_{id_i}.txt"))
         scheme = self.get_scheme(organism_i)
-        program = self.run_mlst_check(seq_files,file_mlst_output_i,id_i,scheme["mlst_check_scheme"])
-        df_mlst_result = self.result_mlst(self,program,file_mlst_output_i,id_i)
+        program = self.run_mlst_check(seq_file=seq_file,file_mlst_output_i=file_mlst_output_i,id_i=id_i,mlst_check_scheme=scheme["mlst_check_scheme"])
+        df_mlst_result = self.result_mlst(program=program,file_mlst_output_i=file_mlst_output_i,id_i=id_i)
         return df_mlst_result
 
