@@ -214,7 +214,7 @@ class findResistance():
             df_tb_profiler_raw_i = pd.DataFrame()
             return df_tb_profiler_raw_i
     
-    def runResfinder(self,id_i: str,seq_files: List,output_dir: Path,scheme: str,platform: str,raw_seq: bool) -> None:
+    def runResfinder(self,id_i: str,seq_files: List ,output_dir: Path,scheme: str,platform: str,raw_seq: bool) -> None:
             try:
                 if raw_seq:
                     base_cmd = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.resfinderVer} -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species'
@@ -227,7 +227,7 @@ class findResistance():
                     else:
                         raise KeyError("No sequence files found!")
                 else:
-                    cmd_resfinder = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.resfinderVer} -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species -ifa {seq_files}'
+                    cmd_resfinder = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.resfinderVer} -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species -ifa {seq_files[0]}'
 
                 result_out = subprocess.run(cmd_resfinder, shell=True,capture_output=True)
                 if self.keepLog:
@@ -273,7 +273,7 @@ class findResistance():
             df_tb_profiler_raw_i = pd.DataFrame()
         return df_resfinder_raw_i,df_pointfinder_raw_i,df_resfinder_line_i,df_pointfinder_line_i,df_tb_profiler_raw_i
     
-    def process_assembly_seq(self,id_i: str,organism_i: str,seq_files_list: List,output_dir_i: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def process_assembly_seq(self,id_i: str,organism_i: str,seq_files_list: List ,output_dir_i: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         raw_seq = False
         platform_i = ""
         scheme = self.get_scheme(organism_i)

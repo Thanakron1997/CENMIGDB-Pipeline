@@ -82,11 +82,11 @@ class processRawSeqData():
 
     def process_data(self,args) -> list[pd.DataFrame]:
         try:
-            index_i,df_i = args
-            id_i = str(df_i['Run'][index_i])
-            organism_i = df_i['Organism'][index_i]
-            platform_i = df_i['Platform'][index_i]
-            output_dir_i = os.path.join(self.tmpProcessDir,id_i)
+            index_i,row = args
+            id_i = str(row['Run'])
+            organism_i = row['Organism']
+            platform_i = row['Platform']
+            output_dir_i = Path(os.path.join(self.tmpProcessDir,id_i))
             if pd.isna(platform_i) or platform_i == "":
                 platform_i = "illumina"
             if not os.path.exists(output_dir_i):
@@ -95,7 +95,7 @@ class processRawSeqData():
             seq_files_list = self.download.download_seq_fastq(id_i,platform_i,output_dir_i)
             df_mlst_result = self.findst.run_mlst_raw_seq(id_i,organism_i,seq_files_list,platform_i,output_dir_i)
             df_resfinder_raw_i,df_pointfinder_raw_i,df_resfinder_line_i,df_pointfinder_line_i,df_tb_profiler = self.findresistance.process_raw_seq(id_i,organism_i,seq_files_list,platform_i,output_dir_i)
-            self.cenmigDB.update_metadata_one(df_i,id_i,df_mlst_result,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
+            self.cenmigDB.update_metadata_one(row,df_mlst_result,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
             self.cenmigDB.update_mlst_resistance_one(df_mlst_result, df_resfinder_raw_i, df_pointfinder_raw_i,df_tb_profiler)
             if self.removeDir:
                 if os.path.exists(output_dir_i):
@@ -129,7 +129,7 @@ class processRawSeqData():
             seq_files_list = self.download.download_seq_inhouse(id_i,lstFileName,output_dir_i)
             df_mlst_result = self.findst.run_mlst_raw_seq(id_i,organism_i,seq_files_list,platform_i,output_dir_i)
             df_resfinder_raw_i,df_pointfinder_raw_i,df_resfinder_line_i,df_pointfinder_line_i,df_tb_profiler = self.findresistance.process_raw_seq(id_i,organism_i,seq_files_list,platform_i,output_dir_i)
-            self.cenmigDB.update_metadata_one(df_i,id_i,df_mlst_result,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
+            self.cenmigDB.update_metadata_one(row,df_mlst_result,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
             self.cenmigDB.update_mlst_resistance_one(df_mlst_result, df_resfinder_raw_i, df_pointfinder_raw_i,df_tb_profiler)
             if self.removeDir:
                 if os.path.exists(output_dir_i):
@@ -155,7 +155,7 @@ class processRawSeqData():
             result = processfunction(job)
             result_queue.put(result)
 
-    def multi_process_data(self,df_sequences: pd.DataFrame, inhouse: bool =False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def multi_process_data(self,df: pd.DataFrame, inhouse: bool =False) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         job_queue = multiprocessing.Queue()
         result_queue = multiprocessing.Queue()
         results = []
@@ -164,8 +164,8 @@ class processRawSeqData():
         else:
             process_func = self.process_data
         pool = multiprocessing.Pool(processes=self.coreUsed, initializer=self.worker_func, initargs=(job_queue, result_queue,process_func)) 
-        df_sra_index = df_sequences.index.tolist() # Get the DataFrame index as a list
-        jobs = [(sra_index, df_sequences.loc[sra_index]) for sra_index in df_sra_index] # Enqueue jobs (each job is a tuple of sra_index and df_sra)
+        df_index = df.index.tolist() # Get the DataFrame index as a list
+        jobs = [(index_, df.loc[index_]) for index_ in df_index] # Enqueue jobs (each job is a tuple of sra_index and df_sra)
         with tqdm(total=len(jobs), desc="Processing sra data: ", ncols=70) as pbar:
             for job in jobs: # add job to queue the job will start but can add job
                 job_queue.put(job)
@@ -183,8 +183,7 @@ class processRawSeqData():
         return df_all_mlst_result,df_all_resistance_result,df_all_pointmultation_result,df_all_tb_profiler_result,df_all_resistance_one_line,df_all_pointmultation_one_line
 
 class processAssemblyData():
-    def __init__(self,
-                ):
+    def __init__(self):
         self.errorsLogFun = errorsLog()
         self.download = downloadSEQ()
         self.findst = findST()
@@ -203,20 +202,23 @@ class processAssemblyData():
     
     def process_data(self,args):
         try:
-            index_i,df_i = args
-            id_i = str(df_i['asm_acc'][index_i])
-            organism_i = df_i['Organism'][index_i]
-            output_dir_i = os.path.join(self.tmpProcessDir,id_i)
+            index_i,row = args
+            id_i = str(row['asm_acc'])
+            organism_i = row['Organism']
+            output_dir_i = Path(os.path.join(self.tmpProcessDir,id_i))
 
             seq_file = self.download.download_seq_assembly(id_i,output_dir_i)
-            df_mlst_result = self.findst.run_mlst_assembly_seq(self,id_i,organism_i,seq_file,output_dir_i)
-            df_resfinder_raw_i,df_pointfinder_raw_i,df_resfinder_line_i,df_pointfinder_line_i,df_tb_profiler = self.findresistance.process_assembly_seq(id_i,organism_i,seq_file,output_dir_i)
-            self.cenmigDB.update_metadata_one(df_i,id_i,df_mlst_result,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
-            self.cenmigDB.update_mlst_resistance_one(df_mlst_result, df_resfinder_raw_i, df_pointfinder_raw_i,df_tb_profiler)
+            if seq_file:
+                df_mlst_result = self.findst.run_mlst_assembly_seq(id_i,organism_i,seq_file,output_dir_i)
+                df_resfinder_raw_i,df_pointfinder_raw_i,df_resfinder_line_i,df_pointfinder_line_i,df_tb_profiler = self.findresistance.process_assembly_seq(id_i,organism_i,[seq_file],output_dir_i)
+                self.cenmigDB.update_metadata_one(row,df_mlst_result,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
+                self.cenmigDB.update_mlst_resistance_one(df_mlst_result, df_resfinder_raw_i, df_pointfinder_raw_i,df_tb_profiler)
+            else:
+                raise Exception("No sequences files found!")
             if self.removeDir:
                 if os.path.exists(output_dir_i):
                     shutil.rmtree(output_dir_i, ignore_errors = False)
-            return list(df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
+            return [df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i]
         except Exception as e:
             if self.keepLog:
                 self.errorsLogFun.error_logs_try("Error in AssemblyData - process_data",e)
@@ -226,9 +228,9 @@ class processAssemblyData():
             df_tb_profiler = pd.DataFrame()
             df_resfinder_line_i = pd.DataFrame()
             df_pointfinder_line_i = pd.DataFrame()
-            return list(df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i)
+            return [df_mlst_result,df_resfinder_raw_i,df_pointfinder_raw_i,df_tb_profiler,df_resfinder_line_i,df_pointfinder_line_i]
     
-    def worker_func(self,job_queue, result_queue):
+    def worker_func(self,job_queue: MPQueue,result_queue: MPQueue):
         while True: # Get a job from the job queue
             job = job_queue.get()
             if job is None: # None is used as a sentinel to signal the worker to exit
@@ -236,14 +238,13 @@ class processAssemblyData():
             result = self.process_data(job) # Put the result in the result queue
             result_queue.put(result)
             
-    def multi_process_data(self,df_sequences):
-        
+    def multi_process_data(self,df:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         job_queue = multiprocessing.Queue()
         result_queue = multiprocessing.Queue()
         results = [] # Collect results as they become available
-        pool = multiprocessing.Pool(processes=self.coreUsed, initializer=self.worker_func, initargs=(job_queue, result_queue,self.worker_func)) 
-        df_sra_index = df_sequences.index.tolist() # Get the DataFrame index as a list
-        jobs = [(sra_index, df_sequences) for sra_index in df_sra_index] # Enqueue jobs (each job is a tuple of sra_index and df_sra)
+        pool = multiprocessing.Pool(processes=self.coreUsed, initializer=self.worker_func, initargs=(job_queue, result_queue)) 
+        df_index = df.index.tolist() # Get the DataFrame index as a list
+        jobs = [(index_, df.loc[index_]) for index_ in df_index] # Enqueue jobs (each job is a tuple of sra_index and df_sra)
         with tqdm(total=len(jobs), desc="Processing sra data: ", ncols=70) as pbar:
             for job in jobs: # add job to queue the job will start but can add job
                 job_queue.put(job)
@@ -280,8 +281,11 @@ class processAllSeqData():
         self.pointMultationOneLineFileResult = config["pointMultationOneLineFileResult"]
     
     def process(self,df):
-        raw_seq, assembly, inhouse = None
-        df_columns = df_columns
+        raw_seq = None
+        assembly = None
+        inhouse = None
+        df_columns = df.columns
+        # check Raw sequences
         if 'Run' in df_columns:
             list_raw_sequences = df['Run'].dropna().tolist()
             if len(list_raw_sequences) > 0:
@@ -290,6 +294,7 @@ class processAllSeqData():
             list_raw_sequences = []
             if self.verbose:
                 print("No Run Columns!")
+        # check assembly sequences
         if 'asm_acc' in df_columns and 'Run' in df_columns:
             df_i = df[~df['Run'].isin(list_raw_sequences)]
             list_assembly = df_i['asm_acc'].dropna().tolist()
@@ -299,6 +304,7 @@ class processAllSeqData():
             list_assembly = []
             if self.verbose:
                 print("No asm_acc Columns!")
+        # check In-House
         if 'cenmigID' in df_columns:
             list_inhouse = df[df['cenmigID'].str.startswith('IH_')]['cenmigID'].tolist()
             if len(list_inhouse) > 0:
@@ -307,7 +313,7 @@ class processAllSeqData():
             list_inhouse = []
             if self.verbose:
                 print("No Run cenmigID!")
-            exit
+
         list_mlst = []
         list_resistance =[]
         list_pointmultation = []

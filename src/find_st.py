@@ -171,7 +171,7 @@ class findST():
         df_mlst_result = self.result_mlst(program=program,file_mlst_output_i=file_mlst_output_i,id_i=id_i)
         return df_mlst_result
     
-    def run_mlst_assembly_seq(self,id_i,organism_i:str,seq_file: Path,output_dir_i: Path) -> pd.DataFrame:
+    def run_mlst_assembly_seq(self,id_i: str,organism_i:str,seq_file: Path,output_dir_i: Path) -> pd.DataFrame:
         """
         Run MLST by MLST Check
         """

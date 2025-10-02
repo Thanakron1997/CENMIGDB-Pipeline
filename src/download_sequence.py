@@ -93,7 +93,7 @@ class downloadSEQ():
                 print(f"Can't download: {id_i}")
         return seq_files_list
 
-    def download_seq_assembly(self,id_i,output_dir_i):
+    def download_seq_assembly(self,id_i: str,output_dir_i: Path) -> Path | None:
         sec_ran_reload = random.randint(2, self.randomSec)
         file_assemly_i = os.path.join(output_dir_i,f"{id_i}.zip")
         dataset_tool_f = os.path.expanduser(self.datasetsToolPath)
@@ -107,7 +107,7 @@ class downloadSEQ():
             if self.keepLog:
                 self.errorsLogFun.error_logs(cmd_for_download,result_download_assembly)
 
-        file_fasta_i_move = os.path.join(output_dir_i,f"{id_i}.fna")
+        file_fasta_i_move = Path(os.path.join(output_dir_i,f"{id_i}.fna"))
         if os.path.exists(file_assemly_i):
             with zipfile.ZipFile(file_assemly_i, 'r') as zip_ref:
                 zip_ref.extractall(output_dir_i)

@@ -48,13 +48,12 @@ class cenmigDBMetaData():
         formatted_new_date = datetime.strptime(formatted_new_date, '%Y-%m-%dT%H:%M:%S.%fZ')
         metadata_database.insert_one({'dateField': formatted_new_date})
 
-    def update_metadata_one(self,df,index_,mlst_data,tb_data,resistance_data,point_data):
+    def update_metadata_one(self,row: pd.Series,mlst_data: pd.DataFrame,tb_data: pd.DataFrame,resistance_data: pd.DataFrame,point_data: pd.DataFrame) -> None:
         try:
             client = self.connect_mongodb()
             db = client['metadata']
             metadata_database = db["bacteria"] 
-            data_i = df.iloc[index_]
-            dictMain = data_i.dropna(how ='all')
+            dictMain = row.dropna(how ='all')
             dictMain = dictMain.astype('string')
             if '_id' in dictMain.index:
                 dictMain = dictMain.drop('_id')
@@ -62,21 +61,25 @@ class cenmigDBMetaData():
             if  mlst_data.shape[0] > 0:
                 mlst_data = mlst_data[['cenmigID','ST','mlst_run_date']]
                 mlst_data = mlst_data.astype('string')
-                mlst_data = mlst_data.iloc[0].to_dict()
-                dictMain.update(mlst_data)
+                mlst_data = mlst_data.loc[[0]]
+                mlst_data_dict = mlst_data.to_dict()
+                dictMain.update(mlst_data_dict)
             if  tb_data.shape[0] > 0:
                 tb_data = tb_data[['cenmigID','wg_snp_lineage_assignment','DR_Type','tb_profiler_run_date']]
                 tb_data = tb_data.astype('string')
-                tb_data = tb_data.iloc[0].to_dict()
-                dictMain.update(tb_data)
+                tb_data = tb_data.iloc[[0]]
+                tb_data_dict = tb_data.to_dict()
+                dictMain.update(tb_data_dict)
             if  resistance_data.shape[0] > 0:
                 resistance_data = resistance_data.astype('string')
-                resistance_data = resistance_data.iloc[0].to_dict()
-                dictMain.update(resistance_data)
+                resistance_data = resistance_data.iloc[[0]]
+                resistance_data_dict = resistance_data.to_dict()
+                dictMain.update(resistance_data_dict)
             if  point_data.shape[0] > 0:
                 point_data = point_data.astype('string')
-                point_data = point_data.iloc[0].to_dict()
-                dictMain.update(point_data)
+                point_data = point_data.iloc[[0]]
+                point_data_dict = point_data.to_dict()
+                dictMain.update(point_data_dict)
             metadata_database.update_one({self.index_column : str(dictMain[self.index_column])}, {'$set' : dictMain}, upsert= self.upsert)
         except Exception as e:
             if self.verbose:
@@ -84,7 +87,7 @@ class cenmigDBMetaData():
             if self.keepLog:
                 self.errorsLogFun.error_logs_try("Error in update_metadata_one : ",e)
 
-    def update_mlst_resistance_one(self,df_all_mlst, df_all_resfinder, df_all_pointfinder,df_all_tb_profiler):
+    def update_mlst_resistance_one(self,df_all_mlst: pd.DataFrame, df_all_resfinder: pd.DataFrame, df_all_pointfinder: pd.DataFrame,df_all_tb_profiler: pd.DataFrame) -> None:
         try:
             client = self.connect_mongodb()
             db = client['metadata']
