@@ -2,13 +2,14 @@ import os
 import json
 import pymongo
 import pandas as pd
-from datetime import datetime
+from typing import Any
+from pathlib import Path
 from gridfs import GridFS
+from datetime import datetime
 from src.errors import errorsLog
 
-class cenmigDBMetaData():
-    def __init__(self,
-            ):
+class cenmigDBMetaData:
+    def __init__(self):
         self.errorsLogFun = errorsLog()
         self.main = os.path.dirname(os.path.realpath(__file__)) + '/'
         with open("config.json", 'r') as f:
@@ -26,7 +27,7 @@ class cenmigDBMetaData():
         client = pymongo.MongoClient(host=self.host ,username=self.username,password=self.password)
         return client
 
-    def get_update_database(self):
+    def get_update_database(self) -> str:
         client = self.connect_mongodb()
         db = client['update_data']
         metadata_database = db["update_date"]
@@ -39,7 +40,7 @@ class cenmigDBMetaData():
                 print("No Data Found!")
             return "1999/01/01"
     
-    def update_date(self,formatted_date):
+    def update_date(self,formatted_date: str) -> None:
         client = self.connect_mongodb()
         db = client['update_data']
         metadata_database = db["update_date"]
@@ -140,7 +141,7 @@ class cenmigDBMetaData():
             if self.keepLog:
                 self.errorsLogFun.error_logs_try("Error in update_mlst_resistance_one : ",e)
 
-    def update_record_by_csv(self,df_update_metadata):
+    def update_record_by_csv(self,df_update_metadata: pd.DataFrame) -> None:
         client = self.connect_mongodb()
         db = client['metadata']
         metadata_database = db["bacteria"]
@@ -158,12 +159,11 @@ class cenmigDBMetaData():
                 update_dict = update_dict.drop('_id')
             update_dict = update_dict.to_dict()
             metadata_database.update_one({self.index_column : str(row[self.index_column])}, {'$set' : update_dict}, upsert= self.upsert)
-        new_metadata_old.to_csv(".old_metadata.csv",index=False)
+        new_metadata_old.to_csv("old_metadata.csv",index=False)
         if self.verbose:
             print("Old Metadata Saved!")
-            print('Update data to MongoDB Completed')
 
-    def del_records_by_csv(self,csv_file_delete):
+    def del_records_by_csv(self,csv_file_delete: pd.DataFrame) -> None:
         client = self.connect_mongodb()
         db = client['metadata']
         metadata_database = db["bacteria"]
@@ -189,16 +189,15 @@ class cenmigDBMetaData():
         if self.verbose:
             print("Deleted Data Completed!")
 
-class cenmigDBGridFS():
-    def __init__(self,
-        ):
+class cenmigDBGridFS:
+    def __init__(self):
         self.main = os.path.dirname(os.path.realpath(__file__)) + '/'
         with open("config.json", 'r') as f:
             config = json.load(f)
             config = config["cenmigDB"]
         self.cenmigDB = cenmigDBMetaData()
     
-    def update_item_to_db(self,file_name,location):
+    def update_item_to_db(self,file_name: str,location: Path) -> Any:
         client = self.cenmigDB.connect_mongodb()
         db = client['sequence']
         fs = GridFS(db)
@@ -208,7 +207,7 @@ class cenmigDBGridFS():
         client.close()
         return file_id
 
-    def get_item_from_db(self,file_name,location):
+    def get_item_from_db(self,file_name: str,location: Path) -> bool:
         client = self.cenmigDB.connect_mongodb()
         db = client['sequence']
         fs = GridFS(db)

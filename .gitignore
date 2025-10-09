@@ -212,7 +212,10 @@ __marimo__/
 config.json
 src/test*
 src/error_log.txt
-proc/*
+prog/edirect/
+prog/sratoolkit/
+prog/datasets
+prog/dataformat
 test*
 src/mlst_db/*
 src/krocus_db/*

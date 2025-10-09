@@ -8,18 +8,19 @@ import pycountry
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+from pathlib import Path
 from multiprocessing import Pool
 from src.errors import errorsLog
+from typing import Dict, Any,List,Tuple
 from src.download_metadata import download_metadata
 from src.process_cenmigDB import cenmigDBMetaData, cenmigDBGridFS
 
 class metadataSra:
-    def __init__(self,
-                ):
+    def __init__(self):
         self.errorsLogFun = errorsLog()
         self.main = os.path.dirname(os.path.realpath(__file__)) + '/'
-        self.sraruntable_path = os.path.join(self.main,'.raw_metadata/SraRun*')
-        self.save_missingsra_path = os.path.join(self.main,'.raw_metadata/')
+        self.sraruntable_path = os.path.join(self.main,'raw_metadata/SraRun*')
+        self.save_missingsra_path = os.path.join(self.main,'raw_metadata/')
         with open("config.json", 'r') as f:
             config = json.load(f)
             config = config["processMetadata"]
@@ -29,7 +30,7 @@ class metadataSra:
         self.coreUsed = config["coreUsed"]
         self.reDownload = config["reDownload"]
 
-    def metadata_from_sraruntable(self):
+    def metadata_from_sraruntable(self) -> Tuple[pd.DataFrame, Any | List]:
         file_srarun_all = glob.glob(self.sraruntable_path)
         columns_select_for_srarun = ['Run','ReleaseDate','AssemblyName','Experiment','LibraryStrategy','LibrarySelection','LibrarySource','LibraryLayout','Platform','Model','BioProject','BioSample','ScientificName','SampleName','CenterName']
         df_srarun_list = []
@@ -52,9 +53,10 @@ class metadataSra:
                 print(f"IDK.")
         df_all_srarun = df_all_srarun[columns_select_for_srarun] # select columns
         list_sra_run_new = df_all_srarun['Run'].values.tolist()
-        return(df_all_srarun,list_sra_run_new)
+
+        return (df_all_srarun,list_sra_run_new)
     
-    def combine_colnames_ignorecase(self,df): #ถ้าเจอ columns name คล้ายกันให้มาเพิ่มในนี้
+    def combine_colnames_ignorecase(self,df: pd.DataFrame) -> pd.DataFrame: #ถ้าเจอ columns name คล้ายกันให้มาเพิ่มในนี้
         df_out = pd.DataFrame()
         regex_list = []
         for key in self.columnDict.keys():
@@ -98,24 +100,39 @@ class metadataSra:
         df_out = df_out.replace(to_replace= r'\\', value= '', regex=True)
         return df_out
     
-    def process_srainfo_file(self,file_path):
+    def process_srainfo_file(self,file_path) -> pd.DataFrame:
         df = pd.read_table(file_path, sep = '\t',low_memory=False)
         df = self.combine_colnames_ignorecase(df)
         return df
     
-    def merge_srainfo(self):
-        srainfo_path = os.path.join(self.main,'.raw_metadata/*.srainfo')
+    # def merge_srainfo(self) -> pd.DataFrame:
+    #     srainfo_path = os.path.join(self.main,'.raw_metadata/*.srainfo')
+    #     all_srainfo_file_path = glob.glob(srainfo_path)
+    #     with Pool(processes=self.coreUsed) as pool:
+    #         # Wrap pool.map with tqdm for progress bar
+    #         list_all_srainfo = list(tqdm(pool.imap(self.process_srainfo_file, all_srainfo_file_path), total=len(all_srainfo_file_path), desc="merging srainfo", ncols=70))
+    #     df_all_srainfo = pd.concat(list_all_srainfo, ignore_index=True)
+    #     df_all_srainfo.drop_duplicates(subset=['Run'], keep='last', inplace=True)
+    #     df_all_srainfo.reset_index(drop=True, inplace=True)
+    #     return df_all_srainfo
+    # More memory-efficient?
+    def merge_srainfo(self) -> pd.DataFrame:
+        srainfo_path = os.path.join(self.main, '.raw_metadata/*.srainfo')
         all_srainfo_file_path = glob.glob(srainfo_path)
-        with Pool(processes=self.coreUsed) as pool:
-            # Wrap pool.map with tqdm for progress bar
-            list_all_srainfo = list(tqdm(pool.imap(self.process_srainfo_file, all_srainfo_file_path), total=len(all_srainfo_file_path), desc="merging srainfo", ncols=70))
-        df_all_srainfo = pd.concat(list_all_srainfo, ignore_index=True)
+
+        def gen():
+            with Pool(processes=self.coreUsed) as pool:
+                for df in tqdm(pool.imap(self.process_srainfo_file, all_srainfo_file_path),
+                            total=len(all_srainfo_file_path), desc="merging srainfo", ncols=70):
+                    yield df
+
+        df_all_srainfo = pd.concat(gen(), ignore_index=True)
         df_all_srainfo.drop_duplicates(subset=['Run'], keep='last', inplace=True)
         df_all_srainfo.reset_index(drop=True, inplace=True)
         return df_all_srainfo
-    
+        
     # download sra metadata from pathogen metadata
-    def update_new_sra_from_pathogen(self,list_sra_new_pathogen,df_new_assembly_n_sra_from_metadata):
+    def update_new_sra_from_pathogen(self,list_sra_new_pathogen,df_new_assembly_n_sra_from_metadata) -> pd.DataFrame:
         if len(list_sra_new_pathogen) > 0:
             all_file_missing_sra_path = os.path.join(self.save_missingsra_path,'missing_sra_*') # save_missingsra_path + 'missing_sra_*'
             file_missing_sra_all = glob.glob(all_file_missing_sra_path)
@@ -134,7 +151,7 @@ class metadataSra:
                     # df_new_sra_from_pathogen = pd.read_csv(missing_sra_file,encoding="utf-8-sig", engine='python')
                     try:
                         df_new_sra_from_pathogen = df_new_sra_from_pathogen[df_new_sra_from_pathogen.Run != 'Run']
-                    except:
+                    except Exception as e:
                         if self.keepLog:
                             self.errorsLogFun.error_logs_try("Error in Delete row == Run:  ",e)
                     columns_select_for_missing_sra = ['Run','ReleaseDate','Experiment','LibraryStrategy','LibrarySelection','LibrarySource','LibraryLayout','Platform','Model','BioProject','BioSample','ScientificName','SampleName','CenterName']
@@ -157,10 +174,8 @@ class metadataSra:
         return df_new_sra_from_pathogen
     
 class metadataPathogen:
-    def __init__(self,
-                ):
+    def __init__(self):
         self.errorsLogFun = errorsLog()
-        
         self.main = os.path.dirname(os.path.realpath(__file__)) + '/'
         self.pathogen_metadata_path = os.path.join(self.main,'.raw_metadata/*metadata.csv')
         with open("config.json", 'r') as f:
@@ -171,13 +186,14 @@ class metadataPathogen:
         self.columnDict = config["columnDict"]
         self.coreUsed = config["coreUsed"]
         self.listSpecies = config["listSpecies"]
+        self.pathogenSelect = config["pathogenSelect"]
 
     # founction for multiprocess
-    def process_pathogen_metada(self,pathogen_metadata_i):
+    def process_pathogen_metada(self,pathogen_metadata_i: str) -> pd.DataFrame:
         df_i = pd.read_csv(pathogen_metadata_i, encoding="utf-8-sig", on_bad_lines='skip',low_memory=False)
         return df_i
 
-    def merge_pathogen_metada(self): 
+    def merge_pathogen_metada(self) -> pd.DataFrame: 
         df_pathogen_metada = pd.DataFrame()
         file_pathogen_i = glob.glob(self.pathogen_metadata_path)
         with Pool(processes=self.coreUsed) as pool:
@@ -193,21 +209,18 @@ class metadataPathogen:
         regex_query = '|'.join(regex_query)
         df_pathogen_select_sp = df_pathogen_no_dup[df_pathogen_no_dup['scientific_name'].str.contains(regex_query, case=False, na=False)]
         df_pathogen_select_sp = df_pathogen_select_sp.reset_index(drop=True)
-        pathogen_select_col = ['LibraryLayout', 'Platform', 'Run', 'asm_acc', 'asm_level', 'asm_stats_contig_n50', 'asm_stats_length_bp', 'asm_stats_n_contig', 'assembly_method', 'bioproject_acc', 'biosample_acc', 'collected_by','collection_date', 'geo_loc_name', 'host', 'host_disease', 'isolation_source', 'lat_lon', 'scientific_name', 'serovar', 'source_type', 'strain', 'AST_phenotypes', 'AMR_genotypes', 'AMR_genotypes_core', 'stress_genotypes', 'amrfinder_version', 'refgene_db_version', 'amrfinder_analysis_type']
-        df_pathogen_select_sp = df_pathogen_select_sp[pathogen_select_col]
+        df_pathogen_select_sp = df_pathogen_select_sp[self.pathogenSelect]
         return df_pathogen_select_sp
-    # select columns and merge data from bio assembly
 
-    def all_assembly_metata(self,df_new_assembly):
-        assembly_col =['Run','asm_acc','asm_level','asm_stats_contig_n50','asm_stats_length_bp','asm_stats_n_contig','assembly_method','bioproject_acc','biosample_acc','collected_by','collection_date','geo_loc_name','host','host_disease','isolation_source','lat_lon','scientific_name','serovar','source_type','strain','AST_phenotypes','AMR_genotypes','AMR_genotypes_core','stress_genotypes','amrfinder_version','refgene_db_version','amrfinder_analysis_type']
-        df_new_assembly_select_col = df_new_assembly[assembly_col]
-        list_bioproject_assembly = df_new_assembly_select_col['bioproject_acc'].values.tolist()
+    def all_assembly_metata(self,df_new_assembly: pd.DataFrame) -> Tuple[pd.DataFrame, List]:
+
+        list_bioproject_assembly = df_new_assembly['bioproject_acc'].values.tolist()
         new_col_name = {'bioproject_acc':'BioProject','biosample_acc':'BioSample','collected_by':'Center_Name','collection_date': 'Collection_date','geo_loc_name':'geo_loc_name_country','scientific_name':'Organism','serovar':'Serovar','strain':'Strain'}
-        df_new_assembly_select_col = df_new_assembly_select_col.rename(columns = new_col_name)
-        return df_new_assembly_select_col,list_bioproject_assembly
+        df_new_assembly_rename = df_new_assembly.rename(columns = new_col_name)
+        return df_new_assembly_rename,list_bioproject_assembly
 
     # merge bio assembly metadata from bioproject
-    def merge_bio_assembly(self):
+    def merge_bio_assembly(self) -> pd.DataFrame:
         bio_assembly_file = os.path.join(self.main,'.raw_metadata/*_assembly.csv')
         all_bioproject_assembly_file_path = glob.glob(bio_assembly_file)
         list_all_bio_assembly = []
@@ -231,8 +244,7 @@ class metadataPathogen:
         return df_all_bioproject_assembly
 
 class processMeta:
-    def __init__(self,
-                ):
+    def __init__(self):
         self.errorsLogFun = errorsLog()
         self.cenmigDB = cenmigDBMetaData()
         self.cenmigDBGridFS = cenmigDBGridFS()
@@ -251,13 +263,13 @@ class processMeta:
         self.inhouseSeqDir = config["inhouseSeqDir"]
 
     # connect CENMIG Database
-    def connect_database(self):
+    def get_old_data(self) -> Tuple[List,List,List]:
         client = self.cenmigDB.connect_mongodb()
         db = client['metadata']
         metadata_database = db["bacteria"]
         try:
             data = metadata_database.find({}, {'_id': 0 ,'Run' : 1, 'asm_acc' : 1, 'cenmigID' : 1})
-            data = pd.DataFrame.from_dict(data)
+            data = pd.DataFrame(list(data))
             data = data[['Run', 'cenmigID', 'asm_acc']]
             cenmigID_old = data['cenmigID'].dropna()
             run_old = data['Run'].dropna()
@@ -274,7 +286,7 @@ class processMeta:
         client.close()
         return list(run_old), list(cenmigID_old), list(asmacc_old)
     
-    def updateDatatoMongodb(self,x):
+    def updateDatatoMongodb(self,x: str) -> str:
         re_id = []
         lstFiles = x.split(", ")
         for i in lstFiles:
@@ -292,7 +304,7 @@ class processMeta:
             return "Can't Update"
             
     # split data when have semicolon and get only text brfore semicolon
-    def split_semicolon(self,i):
+    def split_semicolon(self,i : Any) -> str:
         if type(i) == str:
             if ':' in i:
                 txt = i.split(':')[0]
@@ -308,35 +320,35 @@ class processMeta:
         else:
             return ''
     
-    def addCENMIGID(self,x):
+    def addCENMIGID(self,x: pd.Series) -> str:
         samName = x['Sample_Name']
         id_ = samName + str(time.time())
         idd = hashlib.sha1(id_.encode('utf-8')).hexdigest()
         return "IH_" +str(idd)
 
     #add cenmigID to data
-    def cenmigID_assigner(self,df):
+    def cenmigID_assigner(self,df: pd.DataFrame) -> pd.DataFrame:
         df_cenmig = df[['Run', 'asm_acc']]
         df_cenmig = df_cenmig.copy()
         df_cenmig.loc[:, 'cenmigID'] = np.where(df['Run'].notnull(), df['Run'], df['asm_acc'].combine_first(df['Run']))
-        cenmigID =  df_cenmig[['cenmigID']]
-        cenmigID = cenmigID.squeeze()
+        cenmigID = df_cenmig['cenmigID']
         df.insert(0, 'cenmigID', cenmigID)
-        return(df)
+        return df
 
     # get sub region from UNGEO csv file
-    def ungeo_subregion(self,df_all_new_metadata_update_country):
+    def ungeo_subregion(self,df_all_new_metadata_update_country: pd.DataFrame) -> pd.DataFrame:
         ungeo_file = os.path.join(self.main,self.geoFile)
         cn_geo = pd.read_csv(ungeo_file,low_memory=False)
         cn_geo = cn_geo[['Country','Sub-region Name']]
         cn_geo.columns = ['geo_loc_name_country_fix','sub_region']   
         df_all_new_metadata_update_country_subregion = pd.merge(df_all_new_metadata_update_country, cn_geo, on='geo_loc_name_country_fix',how='left', indicator=False)
         return df_all_new_metadata_update_country_subregion
-    
+
+
     # Use pycountry for get correct country name and replace name is not correct
-    def dict_for_correct_country(self,countryname_fix):
+    def dict_for_correct_country(self,countryname_fix: List) -> Dict:
         countryname_set = set(countryname_fix)
-        country_names = [x.name.upper() for x in pycountry.countries]     
+        country_names = [country.name.upper() for country in pycountry.countries]  # type: ignore
         country_dict = {}
         for data in countryname_set:
             if type(data) != float:
@@ -369,7 +381,7 @@ class processMeta:
         return country_dict
        
     # add pathogen metadata to sra
-    def add_pathogen_to_sra_metadata(self,update_df_all_sra_metada,df_new_pathogen_metada):
+    def add_pathogen_to_sra_metadata(self,update_df_all_sra_metada: pd.DataFrame,df_new_pathogen_metada: pd.DataFrame) -> pd.DataFrame:
         pathogem_col = ['Run','asm_level','asm_stats_contig_n50','asm_stats_length_bp','asm_stats_n_contig','assembly_method','AST_phenotypes','AMR_genotypes','AMR_genotypes_core','stress_genotypes','amrfinder_version','refgene_db_version','amrfinder_analysis_type']
         df_pathogen_select_col = df_new_pathogen_metada[pathogem_col]
         df_sra_add_pathogen = pd.merge(update_df_all_sra_metada,df_pathogen_select_col,how='left', on='Run')
@@ -378,17 +390,17 @@ class processMeta:
         return df_sra_add_pathogen  
     
     # clean country name
-    def update_country_all_metadata(self,df_all_new_metadata):
+    def update_country_all_metadata(self,df_all_new_metadata: pd.DataFrame) -> pd.DataFrame:
         df_all_new_metadata['geo_loc_name_country'] =  df_all_new_metadata['geo_loc_name_country'].apply(self.split_semicolon)
         df_all_new_metadata['geo_loc_name_country_fix'] = df_all_new_metadata['geo_loc_name_country'].replace({r'\d+': np.nan, 'nan': np.nan, 'USA.*' : 'United states','United Kingdom.*': 'United Kingdom','Brazil.*': 'Brazil','Australia,*' : 'Australia'}, regex=True)
         # Fix country name 2nd
-        correct_dict = self.dict_for_correct_country(countryname_fix = df_all_new_metadata['geo_loc_name_country_fix'])
+        correct_dict = self.dict_for_correct_country(df_all_new_metadata['geo_loc_name_country_fix'].to_list())
         #replace correct country name to metadata dataframe 
         df_all_new_metadata['geo_loc_name_country_fix'] = df_all_new_metadata['geo_loc_name_country_fix'].replace(correct_dict)
         return df_all_new_metadata
 
-    def process(self):
-        run_old, cenmigID_old,asmacc_old = self.connect_database()
+    def process(self) -> pd.DataFrame:
+        run_old, cenmigID_old,asmacc_old = self.get_old_data()
         meta_sra = metadataSra()
         meta_pathogen = metadataPathogen()
         download_meta = download_metadata()
@@ -461,7 +473,7 @@ class processMeta:
         df_all_new_metadata_all_update.to_csv(self.saveMetadataFile,index=False)
         return df_all_new_metadata_all_update
     
-    def process_inhouse(self,file_name_inhouse):
+    def process_inhouse(self,file_name_inhouse: str) -> pd.DataFrame:
         df_metadata_inhouse = pd.read_csv(file_name_inhouse,encoding="utf-8",low_memory=False)
         # add CENMIG ID
         df_metadata_inhouse['cenmigID'] = df_metadata_inhouse.apply(self.addCENMIGID,axis=1)

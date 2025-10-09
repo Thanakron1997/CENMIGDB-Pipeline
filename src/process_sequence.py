@@ -62,7 +62,7 @@ def cleanDfList(results: List[List[pd.DataFrame]]) -> Tuple[pd.DataFrame, pd.Dat
         df_all_pointmultation_one_line = pd.DataFrame()
     return df_all_mlst_result,df_all_resistance_result,df_all_pointmultation_result,df_all_tb_profiler_result,df_all_resistance_one_line,df_all_pointmultation_one_line
 
-class processRawSeqData():
+class processRawSeqData:
     def __init__(self):
         self.errorsLogFun = errorsLog()
         self.download = downloadSEQ()
@@ -182,7 +182,7 @@ class processRawSeqData():
         
         return df_all_mlst_result,df_all_resistance_result,df_all_pointmultation_result,df_all_tb_profiler_result,df_all_resistance_one_line,df_all_pointmultation_one_line
 
-class processAssemblyData():
+class processAssemblyData:
     def __init__(self):
         self.errorsLogFun = errorsLog()
         self.download = downloadSEQ()
@@ -200,7 +200,7 @@ class processAssemblyData():
         tmpProcessDir = config["tmpProcessDir"]
         self.tmpProcessDir = os.path.join(self.main,tmpProcessDir)
     
-    def process_data(self,args):
+    def process_data(self,args) -> list[pd.DataFrame]:
         try:
             index_i,row = args
             id_i = str(row['asm_acc'])
@@ -261,9 +261,8 @@ class processAssemblyData():
         
         return df_all_mlst_result,df_all_resistance_result,df_all_pointmultation_result,df_all_tb_profiler_result,df_all_resistance_one_line,df_all_pointmultation_one_line
 
-class processAllSeqData():
-    def __init__(self,
-                ):
+class processAllSeqData:
+    def __init__(self):
         self.errorsLogFun = errorsLog()
         self.processRawSeqData = processRawSeqData()
         self.processAssemblyData = processAssemblyData()
@@ -273,6 +272,7 @@ class processAllSeqData():
             config = config["processAllSeqData"]
         self.verbose = config["verbose"]
         self.keepLog = config["keepLog"]
+        self.cache = config["cache"]
         self.mlstFileResult = config["mlstFileResult"]
         self.resistanceFileResult = config["resistanceFileResult"]
         self.pointMultationFileResult = config["pointMultationFileResult"]
@@ -280,11 +280,16 @@ class processAllSeqData():
         self.resistanceOneLineFileResult = config["resistanceOneLineFileResult"]
         self.pointMultationOneLineFileResult = config["pointMultationOneLineFileResult"]
     
-    def process(self,df):
+    def process(self,df: pd.DataFrame) -> None:
         raw_seq = None
         assembly = None
         inhouse = None
         df_columns = df.columns
+        if self.cache:
+            from src.process_metadata import processMeta
+            process_meta = processMeta()
+            _, cenmigID_old,_ =  process_meta.get_old_data()
+            df = df[~df['cenmigID'].isin(cenmigID_old)]
         # check Raw sequences
         if 'Run' in df_columns:
             list_raw_sequences = df['Run'].dropna().tolist()

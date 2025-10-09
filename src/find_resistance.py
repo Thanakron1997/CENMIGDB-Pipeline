@@ -1,14 +1,14 @@
 import os
+import glob
 import json
+import datetime
 import subprocess
 import pandas as pd
-import datetime
-import glob
 from pathlib import Path
-from typing import List,Dict,Tuple
+from typing import List,Tuple
 from src.errors import errorsLog
 
-class findResistance():
+class findResistance:
     def __init__(self):
         self.errorsLogFun = errorsLog()
         self.main = os.path.dirname(os.path.realpath(__file__)) + '/'

@@ -1,21 +1,20 @@
-import subprocess
-import shutil
+import os
+import re
 import json
 import glob
 import time
-import os
-import re
 import gzip
 import random
+import shutil
 import zipfile
-from pathlib import Path
+import subprocess
 from typing import List
+from pathlib import Path
 from src.errors import errorsLog
 from src.process_cenmigDB import cenmigDBGridFS
 
-class downloadSEQ():
-    def __init__(self,
-            ):
+class downloadSEQ:
+    def __init__(self):
         self.errorsLogFun = errorsLog()
         self.cenmigDBGFS = cenmigDBGridFS()
         self.main = os.path.dirname(os.path.realpath(__file__)) + '/'
@@ -149,7 +148,7 @@ class downloadSEQ():
             if self.verbose:
                 print(f"Can't download: {id_i}")
 
-    def download_seq_inhouse(self,id_i: str,lstFileName: list,output_dir_i: Path) -> list[Path]:
+    def download_seq_inhouse(self,id_i: str,lstFileName: List,output_dir_i: Path) -> List[Path]:
         """
         Download sequences from inhouse db
         """

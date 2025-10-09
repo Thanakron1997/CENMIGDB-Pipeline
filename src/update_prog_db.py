@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import requests
 
-class updateStringMLSTDB():
+class updateStringMLSTDB:
     def __init__(self):
         self.main = os.path.dirname(os.path.realpath(__file__))
         with open("config.json", 'r') as f:
@@ -38,7 +38,7 @@ class updateStringMLSTDB():
                  print(f"Run: {cmd}")
             subprocess.run(cmd, shell=True,cwd="src/")
                  
-class updateResfinder():
+class updateResfinder:
     def __init__(self):
         self.main = os.path.dirname(os.path.realpath(__file__))
         with open("config.json", 'r') as f:
@@ -55,7 +55,7 @@ class updateResfinder():
         if self.verbose:
              print("Download Phenotypes file for Resfinder Compeleted!")
 
-class updateKrocus():
+class updateKrocus:
     def __init__(self):
         self.main = os.path.dirname(os.path.realpath(__file__))
         with open("config.json", 'r') as f:

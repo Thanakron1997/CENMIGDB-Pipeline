@@ -8,9 +8,8 @@ from typing import List,Dict
 from pathlib import Path
 from src.errors import errorsLog
 
-class findST():
-    def __init__(self,
-            ):
+class findST:
+    def __init__(self):
         self.errorsLogFun = errorsLog()
         self.main = os.path.dirname(os.path.realpath(__file__)) + '/'
         with open("config.json", 'r') as f:
