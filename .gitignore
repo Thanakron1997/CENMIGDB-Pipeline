@@ -224,7 +224,7 @@ src/mlst_db/*
 src/krocus_db/*
 src/mlst_db/Staphylococcus_aureus/*
 src/raw_metadata/
+src/result_metada/
 src/resfinder_db/
-src/resfinder_db
 src/tmp/
 src/tmpProcess/
