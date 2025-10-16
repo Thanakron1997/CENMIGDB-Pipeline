@@ -4,7 +4,6 @@ import shutil
 import pandas as pd
 import multiprocessing
 from tqdm import tqdm
-from pathlib import Path
 from multiprocessing import Queue as MPQueue
 from typing import Callable, Any,List,Tuple
 from src.download_sequence import downloadSEQ
@@ -79,6 +78,9 @@ class processRawSeqData:
         self.coreUsed = config["coreUsed"]
         tmpProcessDir = config["tmpProcessDir"]
         self.tmpProcessDir = os.path.join(self.main,tmpProcessDir)
+        if not os.path.exists(self.tmpProcessDir):
+            os.mkdir(self.tmpProcessDir)
+
 
     def process_data(self,args) -> list[pd.DataFrame]:
         try:
@@ -86,7 +88,7 @@ class processRawSeqData:
             id_i = str(row['Run'])
             organism_i = row['Organism']
             platform_i = row['Platform']
-            output_dir_i = Path(os.path.join(self.tmpProcessDir,id_i))
+            output_dir_i = os.path.join(self.tmpProcessDir,id_i)
             if pd.isna(platform_i) or platform_i == "":
                 platform_i = "illumina"
             if not os.path.exists(output_dir_i):
@@ -120,7 +122,7 @@ class processRawSeqData:
             organism_i = row['Organism']
             platform_i = row['Platform']
             file_name_i = row['file_name']
-            output_dir_i = Path(os.path.join(self.tmpProcessDir,id_i))
+            output_dir_i = os.path.join(self.tmpProcessDir,id_i)
             if pd.isna(platform_i) or platform_i == "":
                 platform_i = "illumina"
             if not os.path.exists(output_dir_i):
@@ -199,13 +201,15 @@ class processAssemblyData:
         self.coreUsed = config["coreUsed"]
         tmpProcessDir = config["tmpProcessDir"]
         self.tmpProcessDir = os.path.join(self.main,tmpProcessDir)
+        if not os.path.exists(self.tmpProcessDir):
+            os.mkdir(self.tmpProcessDir)
     
     def process_data(self,args) -> list[pd.DataFrame]:
         try:
             index_i,row = args
             id_i = str(row['asm_acc'])
             organism_i = row['Organism']
-            output_dir_i = Path(os.path.join(self.tmpProcessDir,id_i))
+            output_dir_i = os.path.join(self.tmpProcessDir,id_i)
 
             seq_file = self.download.download_seq_assembly(id_i,output_dir_i)
             if seq_file:
@@ -279,6 +283,9 @@ class processAllSeqData:
         self.tbProfilerFileResult = config["tbProfilerFileResult"]
         self.resistanceOneLineFileResult = config["resistanceOneLineFileResult"]
         self.pointMultationOneLineFileResult = config["pointMultationOneLineFileResult"]
+        saveMetaPath = os.path.join(self.main,"result_metada")
+        if not os.path.exists(saveMetaPath):
+            os.mkdir(saveMetaPath)
     
     def process(self,df: pd.DataFrame) -> None:
         raw_seq = None

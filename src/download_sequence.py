@@ -9,7 +9,6 @@ import shutil
 import zipfile
 import subprocess
 from typing import List
-from pathlib import Path
 from src.errors import errorsLog
 from src.process_cenmigDB import cenmigDBGridFS
 
@@ -25,10 +24,11 @@ class downloadSEQ:
         self.keepLog = config["keepLog"]
         self.reDownload  = config["reDownload"]
         self.randomSec = config["randomSec"]
-        self.sratoolPrefetchPath = config["sratoolPrefetchPath"]
-        self.sratoolFasterqPath = config["sratoolFasterqPath"]
-        self.sratoolFastqDumpPath = config["sratoolFastqDumpPath"]
-        self.datasetsToolPath = config["datasetsToolPath"]
+        mainDir = os.getcwd()
+        self.sratoolPrefetchPath = os.path.join(mainDir, config["sratoolPrefetchPath"])
+        self.sratoolFasterqPath = os.path.join(mainDir,config["sratoolFasterqPath"])
+        self.sratoolFastqDumpPath = os.path.join(mainDir,config["sratoolFastqDumpPath"])
+        self.datasetsToolPath = os.path.join(mainDir,config["datasetsToolPath"])
 
     def sort_key(self,filename):
         match = re.search(r'_(\d+)', filename)
@@ -42,8 +42,7 @@ class downloadSEQ:
         sec_ran_reload = random.randint(2, self.randomSec)
         try:
             file_sra_i = os.path.join(output_dir_i, f"{str(id_i)}.sra") 
-            sratool_prefetch_f = os.path.expanduser(self.sratoolPrefetchPath)
-            cmd_for_download_sra = f"{sratool_prefetch_f} -f yes -o {file_sra_i} {str(id_i)}"
+            cmd_for_download_sra = f"{self.sratoolPrefetchPath} -f yes -o {file_sra_i} {str(id_i)}"
             result_download_sra = subprocess.run(cmd_for_download_sra, shell=True, capture_output=True)
             if self.keepLog:
                 self.errorsLogFun.error_logs(cmd_for_download_sra,result_download_sra)
@@ -57,14 +56,12 @@ class downloadSEQ:
                     if os.path.exists(file_sra_i):
                         break
             if "pacbio" in platform_i.lower() or 'pacbio_smrt' in platform_i.lower() or "nanopore" in platform_i.lower() or "oxford" in platform_i.lower():
-                sratool_fastq_f = os.path.expanduser(self.sratoolFastqDumpPath)
-                cmd_fastq_dump = f"{sratool_fastq_f} -O {output_dir_i}/ {file_sra_i}"
+                cmd_fastq_dump = f"{self.sratoolFastqDumpPath} -O {output_dir_i}/ {file_sra_i}"
                 result_download_fastq = subprocess.run(cmd_fastq_dump, shell=True, capture_output=True)
                 if self.keepLog:
                     self.errorsLogFun.error_logs(cmd_fastq_dump,result_download_fastq)
             else:    
-                sratool_fasterq_f = os.path.expanduser(self.sratoolFasterqPath)
-                cmd_fasterq_dump = f"{sratool_fasterq_f} -O {output_dir_i}/ {file_sra_i}"
+                cmd_fasterq_dump = f"{self.sratoolFasterqPath} -O {output_dir_i}/ {file_sra_i}"
                 result_download_fasterq = subprocess.run(cmd_fasterq_dump, shell=True, capture_output=True)
                 if self.keepLog:
                     self.errorsLogFun.error_logs(cmd_fasterq_dump,result_download_fasterq)
@@ -73,8 +70,7 @@ class downloadSEQ:
                 self.errorsLogFun.error_logs_try("Error in download Sequence Data : "+id_i,e)
             time.sleep(sec_ran_reload)
             try:
-                sratool_fastq_f = os.path.expanduser(self.sratoolFastqDumpPath)
-                cmd_fastq_dump = f"{sratool_fastq_f} -O {output_dir_i}/ --split-3 {str(id_i)}"
+                cmd_fastq_dump = f"{self.sratoolFastqDumpPath} -O {output_dir_i}/ --split-3 {str(id_i)}"
                 result_download_fastq = subprocess.run(cmd_fastq_dump, shell=True, capture_output=True)
                 if self.keepLog:
                     self.errorsLogFun.error_logs(cmd_fastq_dump,result_download_fastq)
@@ -92,11 +88,10 @@ class downloadSEQ:
                 print(f"Can't download: {id_i}")
         return seq_files_list
 
-    def download_seq_assembly(self,id_i: str,output_dir_i: Path) -> Path | None:
+    def download_seq_assembly(self,id_i: str,output_dir_i: str) -> str | None:
         sec_ran_reload = random.randint(2, self.randomSec)
         file_assemly_i = os.path.join(output_dir_i,f"{id_i}.zip")
-        dataset_tool_f = os.path.expanduser(self.datasetsToolPath)
-        cmd_for_download = f"{dataset_tool_f} download genome accession {id_i} --include genome --filename {file_assemly_i}"
+        cmd_for_download = f"{self.datasetsToolPath} download genome accession {id_i} --include genome --filename {file_assemly_i}"
         result_download_assembly = subprocess.run(cmd_for_download, shell=True,capture_output=True)
         if self.keepLog:
             self.errorsLogFun.error_logs(cmd_for_download,result_download_assembly)
@@ -106,7 +101,7 @@ class downloadSEQ:
             if self.keepLog:
                 self.errorsLogFun.error_logs(cmd_for_download,result_download_assembly)
 
-        file_fasta_i_move = Path(os.path.join(output_dir_i,f"{id_i}.fna"))
+        file_fasta_i_move = os.path.join(output_dir_i,f"{id_i}.fna")
         if os.path.exists(file_assemly_i):
             with zipfile.ZipFile(file_assemly_i, 'r') as zip_ref:
                 zip_ref.extractall(output_dir_i)
@@ -119,7 +114,7 @@ class downloadSEQ:
             if self.verbose:
                 print("Can't Download : {} file and try to download by {}....".format(id_i,id_i_GCF))
             file_assemly_i_2 = os.path.join(output_dir_i,f"{id_i_GCF}.zip")
-            cmd_for_download_2 = f"{dataset_tool_f} download genome accession {id_i_GCF} --include genome --filename {file_assemly_i_2}"
+            cmd_for_download_2 = f"{self.datasetsToolPath} download genome accession {id_i_GCF} --include genome --filename {file_assemly_i_2}"
             result_download_assembly_by_gcf = subprocess.run(cmd_for_download_2, shell=True,capture_output=True)
             if self.keepLog:
                 self.errorsLogFun.error_logs(cmd_for_download_2,result_download_assembly_by_gcf)
@@ -148,7 +143,7 @@ class downloadSEQ:
             if self.verbose:
                 print(f"Can't download: {id_i}")
 
-    def download_seq_inhouse(self,id_i: str,lstFileName: List,output_dir_i: Path) -> List[Path]:
+    def download_seq_inhouse(self,id_i: str,lstFileName: List,output_dir_i: str) -> List[str]:
         """
         Download sequences from inhouse db
         """

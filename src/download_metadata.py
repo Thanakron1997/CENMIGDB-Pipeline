@@ -38,8 +38,11 @@ class download_metadata:
         self.reDownload = config["reDownload"]
         self.dateDownload = config["dateDownload"]
         self.coreUsed = config["coreUsed"]
-        self.datasetsToolPath = config["datasetsToolPath"]
-        self.dataformatsToolPath = config["dataformatsToolPath"]
+        mainDir = os.getcwd()
+        self.esearch = os.path.join(mainDir, config["esearch"])
+        self.efetch = os.path.join(mainDir, config["efetch"])
+        self.datasetsToolPath = os.path.join(mainDir, config["datasetsToolPath"])
+        self.dataformatsToolPath = os.path.join(mainDir, config["dataformatsToolPath"])
         self.cenmigDBMetaData = cenmigDBMetaData()
 
     def new_version_pathogen(self,url: str) -> str:
@@ -78,7 +81,7 @@ class download_metadata:
             query_i = query_temp.replace('{SPECIES}',sp_i)
             query_i = query_i.replace('{DATE1}',date_old)
             query_i = query_i.replace('{DATE2}',date_new)
-            cmd_download_sratable = f"esearch -db sra -query '{query_i}' | efetch -format runinfo > {file_name_sratable_i}"
+            cmd_download_sratable = f"{self.esearch} -db sra -query '{query_i}' | {self.efetch} -format runinfo > {file_name_sratable_i}"
             sra_run_table += 1
             if self.verbose:
                 print(f"\n RUN: {cmd_download_sratable}")
@@ -205,7 +208,7 @@ class download_metadata:
                 missing_sra_file = os.path.join(self.all_metadata_save_path,f"missing_sra_{str(count_missing_list_files)}.csv")
                 count_missing_list_files += 1
                 query_missing_sra = ' OR '.join(missing_list_i)
-                cmd_missing_sra = f"esearch -db sra -query '{query_missing_sra}' | efetch -format runinfo > {missing_sra_file}"
+                cmd_missing_sra = f"{self.esearch} -db sra -query '{query_missing_sra}' | {self.efetch} -format runinfo > {missing_sra_file}"
                 result_cmd = subprocess.run(cmd_missing_sra, shell=True, capture_output=True)
                 if self.keepLog:
                     self.errorsLogFun.error_logs(cmd_missing_sra,result_cmd)
@@ -240,10 +243,10 @@ class download_metadata:
             if self.verbose:
                 print(f"New Assembly Bioproject : {new_bio_assembly}")
             for ass_bio_i in new_bio_assembly:
-                path_bio_ass_file = os.path.join(self.main,f"/raw_metadata,{str(ass_bio_i)}_assembly.csv")
-                datasets_tool_f = os.path.expanduser(self.datasetsToolPath) #os.path.join(self.main,self.datasetsToolPath) 
-                dataformats_tool_f = os.path.expanduser(self.dataformatsToolPath) #os.path.join(self.main,self.dataformatsToolPath)
-                cmd_download_assembly = datasets_tool_f +" summary genome accession "+str(ass_bio_i) +" --as-json-lines | "+dataformats_tool_f+" tsv genome --fields accession,annotinfo-release-date,assminfo-sequencing-tech,assminfo-biosample-ids-db,assminfo-biosample-ids-value > "+ path_bio_ass_file
+                path_bio_ass_file = os.path.join(self.main,f"raw_metadata",f"{str(ass_bio_i)}_assembly.csv")
+                # datasets_tool_f = os.path.expanduser(self.datasetsToolPath) #os.path.join(self.main,self.datasetsToolPath) 
+                # dataformats_tool_f = os.path.expanduser(self.dataformatsToolPath) #os.path.join(self.main,self.dataformatsToolPath)
+                cmd_download_assembly = f"{self.datasetsToolPath} summary genome accession {str(ass_bio_i)} --as-json-lines | {self.dataformatsToolPath} tsv genome --fields accession,annotinfo-release-date,assminfo-sequencing-tech,assminfo-biosample-ids-db,assminfo-biosample-ids-value > {path_bio_ass_file}"
                 result_cmd = subprocess.run(cmd_download_assembly, shell=True, capture_output=True)
                 if self.keepLog:
                     self.errorsLogFun.error_logs(cmd_download_assembly,result_cmd)

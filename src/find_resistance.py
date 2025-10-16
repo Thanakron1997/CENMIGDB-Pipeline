@@ -4,7 +4,6 @@ import json
 import datetime
 import subprocess
 import pandas as pd
-from pathlib import Path
 from typing import List,Tuple
 from src.errors import errorsLog
 
@@ -22,6 +21,11 @@ class findResistance:
         self.schemeList = config["schemeList"]
         self.tbprofilerVer = config["tbprofilerVer"]
         self.resfinderVer = config["resfinderVer"]
+        self.blastnPath = config["blastnPath"]
+        self.kmaPath = config["kmaPath"]
+        self.resDB = config["resDB"]
+        self.pointDB = config["pointDB"]
+        self.disDB = config["disDB"]
         phenotypesFiles = config["phenotypesFiles"]
         drugClassTB =  config["drugClassTB"]
         self.tbp_drug_name = pd.read_csv(os.path.join(self.main,drugClassTB),low_memory=False)
@@ -36,7 +40,7 @@ class findResistance:
                 scheme_name = key
         return scheme_name
 
-    def result_resfinder(self,output_dir: Path,id_i: str) -> Tuple[pd.DataFrame, str, str]:
+    def result_resfinder(self,output_dir: str,id_i: str) -> Tuple[pd.DataFrame, str, str]:
         try:
             file_sra_resfinder_raw_i = os.path.join(output_dir ,'ResFinder_results_tab.txt')
             if os.path.isfile(file_sra_resfinder_raw_i):
@@ -84,7 +88,7 @@ class findResistance:
             resfinder_db_version = "NA"
             return df_sra_resfinder_raw_i,software_version,resfinder_db_version
 
-    def result_pointfinder(self,output_dir: Path,id_i: str) -> Tuple[pd.DataFrame, str]:
+    def result_pointfinder(self,output_dir: str,id_i: str) -> Tuple[pd.DataFrame, str]:
         try:
             file_sra_pointfinder_raw_i = os.path.join(output_dir,'PointFinder_results.txt')
             if os.path.isfile(file_sra_pointfinder_raw_i):
@@ -160,7 +164,7 @@ class findResistance:
             df_pointfinder_line_i = pd.DataFrame()
         return df_resfinder_line_i, df_pointfinder_line_i
     
-    def result_tbprofiler(self,output_dir: Path,id_i: str) -> pd.DataFrame:
+    def result_tbprofiler(self,output_dir: str,id_i: str) -> pd.DataFrame:
         try:
             tb_profiler_js_file_select = os.path.join(output_dir,"results/tbprofiler.results.json")
             if os.path.isfile(tb_profiler_js_file_select):
@@ -205,7 +209,7 @@ class findResistance:
                 df_tb_profiler_raw_i = pd.DataFrame([dict_tbprofiler_result])
                 return df_tb_profiler_raw_i
             else:
-                df_tb_profiler_raw_i = pd.DataFrame([{'cenmigID':id_i}])
+                df_tb_profiler_raw_i = pd.DataFrame()
                 return df_tb_profiler_raw_i
             
         except Exception as e:
@@ -214,10 +218,11 @@ class findResistance:
             df_tb_profiler_raw_i = pd.DataFrame()
             return df_tb_profiler_raw_i
     
-    def runResfinder(self,id_i: str,seq_files: List ,output_dir: Path,scheme: str,platform: str,raw_seq: bool) -> None:
+    def runResfinder(self,id_i: str,seq_files: List ,output_dir: str,scheme: str,platform: str,raw_seq: bool) -> None:
             try:
                 if raw_seq:
-                    base_cmd = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.resfinderVer} -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species'
+                    base_cmd = f'docker run --rm --user {self.uidDocker}:{self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.resfinderVer} -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species'
+                    # base_cmd = f'python -m resfinder --blastPath {self.blastnPath} --kmaPath {self.kmaPath} --db_path_res {self.resDB} --db_path_disinf {self.disDB} --db_path_point {self.pointDB} -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species'
                     if len(seq_files) == 1:
                         if "nanopore" in platform.lower() or "oxford" in platform.lower():
                             base_cmd += " --nanopore"
@@ -227,7 +232,8 @@ class findResistance:
                     else:
                         raise KeyError("No sequence files found!")
                 else:
-                    cmd_resfinder = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.resfinderVer} -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species -ifa {seq_files[0]}'
+                    cmd_resfinder = f'docker run --rm --user {self.uidDocker}:{self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.resfinderVer} -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species -ifa {seq_files[0]}'
+                    # cmd_resfinder = f'python -m resfinder --blastPath {self.blastnPath} --kmaPath {self.kmaPath} --db_path_res {self.resDB} --db_path_disinf {self.disDB} --db_path_point {self.pointDB} -s "{scheme}" -o {output_dir} -l 0.6 -t 0.8 -acq --point --ignore_missing_species -ifa {seq_files[0]}'
 
                 result_out = subprocess.run(cmd_resfinder, shell=True,capture_output=True)
                 if self.keepLog:
@@ -237,7 +243,7 @@ class findResistance:
                 if self.keepLog:
                     self.errorsLogFun.error_logs_try(f"Error in Resfinder : {id_i}",e)
     
-    def runTbProfiler(self,platform: str,seq_files: List,output_dir: Path,id_i: str) -> None:
+    def runTbProfiler(self,platform: str,seq_files: List,output_dir: str,id_i: str) -> None:
         try:
             if "pacbio" in platform.lower() or 'PACBIO_SMRT' in platform.lower():
                 tb_pro_platform = 'pacbio'
@@ -246,9 +252,9 @@ class findResistance:
             else:
                 tb_pro_platform = 'illumina'
             if len(seq_files) == 1:
-                cmd_tb_profiler = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.tbprofilerVer} profile -t 4 --ram 5 --depth 10,10 --af 0.05,0.1 --sv_depth 10,10 --logging CRITICAL --platform {tb_pro_platform}  -1 {seq_files[0]} --dir {output_dir}'
+                cmd_tb_profiler = f'docker run --rm --user {self.uidDocker}:{self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.tbprofilerVer} profile -t 4 --ram 5 --depth 10,10 --af 0.05,0.1 --sv_depth 10,10 --logging CRITICAL --platform {tb_pro_platform}  -1 {seq_files[0]} --dir {output_dir}'
             elif len(seq_files) > 1:
-                cmd_tb_profiler = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.tbprofilerVer} profile -t 4 --ram 5 --depth 10,10 --af 0.05,0.1 --sv_depth 10,10 --logging CRITICAL --platform {tb_pro_platform}  -1 {seq_files[0]} -2 {seq_files[0]} --dir {output_dir}'
+                cmd_tb_profiler = f'docker run --rm --user {self.uidDocker}:{self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'{self.tbprofilerVer} profile -t 4 --ram 5 --depth 10,10 --af 0.05,0.1 --sv_depth 10,10 --logging CRITICAL --platform {tb_pro_platform}  -1 {seq_files[0]} -2 {seq_files[0]} --dir {output_dir}'
             else:
                 raise KeyError("No sequence files found!")
             tbprofilerOut = subprocess.run(cmd_tb_profiler, shell=True,capture_output=True)
@@ -259,7 +265,7 @@ class findResistance:
             if self.keepLog:
                 self.errorsLogFun.error_logs_try(f"Error in TB-Profiler: {id_i}",e)
    
-    def process_raw_seq(self,id_i: str,organism_i: str,seq_files_list: List,platform_i: str,output_dir_i: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def process_raw_seq(self,id_i: str,organism_i: str,seq_files_list: List,platform_i: str,output_dir_i: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         raw_seq = True
         scheme = self.get_scheme(organism_i)
         self.runResfinder(id_i=id_i,seq_files=seq_files_list,output_dir=output_dir_i,scheme=scheme,platform=platform_i,raw_seq=raw_seq)
@@ -273,7 +279,7 @@ class findResistance:
             df_tb_profiler_raw_i = pd.DataFrame()
         return df_resfinder_raw_i,df_pointfinder_raw_i,df_resfinder_line_i,df_pointfinder_line_i,df_tb_profiler_raw_i
     
-    def process_assembly_seq(self,id_i: str,organism_i: str,seq_files_list: List ,output_dir_i: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def process_assembly_seq(self,id_i: str,organism_i: str,seq_files_list: List ,output_dir_i: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         raw_seq = False
         platform_i = ""
         scheme = self.get_scheme(organism_i)

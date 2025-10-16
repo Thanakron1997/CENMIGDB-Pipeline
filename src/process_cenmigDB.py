@@ -3,7 +3,6 @@ import json
 import pymongo
 import pandas as pd
 from typing import Any
-from pathlib import Path
 from gridfs import GridFS
 from datetime import datetime
 from src.errors import errorsLog
@@ -62,28 +61,25 @@ class cenmigDBMetaData:
             if  mlst_data.shape[0] > 0:
                 mlst_data = mlst_data[['cenmigID','ST','mlst_run_date']]
                 mlst_data = mlst_data.astype('string')
-                mlst_data = mlst_data.loc[[0]]
-                mlst_data_dict = mlst_data.to_dict()
+                mlst_data_dict = mlst_data.iloc[0].to_dict()
                 dictMain.update(mlst_data_dict)
             if  tb_data.shape[0] > 0:
                 tb_data = tb_data[['cenmigID','wg_snp_lineage_assignment','DR_Type','tb_profiler_run_date']]
                 tb_data = tb_data.astype('string')
-                tb_data = tb_data.iloc[[0]]
-                tb_data_dict = tb_data.to_dict()
+                tb_data_dict = tb_data.iloc[0].to_dict()
                 dictMain.update(tb_data_dict)
             if  resistance_data.shape[0] > 0:
                 resistance_data = resistance_data.astype('string')
-                resistance_data = resistance_data.iloc[[0]]
-                resistance_data_dict = resistance_data.to_dict()
+                resistance_data_dict = resistance_data.iloc[0].to_dict()
                 dictMain.update(resistance_data_dict)
             if  point_data.shape[0] > 0:
                 point_data = point_data.astype('string')
-                point_data = point_data.iloc[[0]]
-                point_data_dict = point_data.to_dict()
+                point_data_dict = point_data.iloc[0].to_dict()
                 dictMain.update(point_data_dict)
             metadata_database.update_one({self.index_column : str(dictMain[self.index_column])}, {'$set' : dictMain}, upsert= self.upsert)
         except Exception as e:
             if self.verbose:
+                print(tb_data)
                 print(f"Error in update_metadata_one : {e}",e)
             if self.keepLog:
                 self.errorsLogFun.error_logs_try("Error in update_metadata_one : ",e)
@@ -197,7 +193,7 @@ class cenmigDBGridFS:
             config = config["cenmigDB"]
         self.cenmigDB = cenmigDBMetaData()
     
-    def update_item_to_db(self,file_name: str,location: Path) -> Any:
+    def update_item_to_db(self,file_name: str,location: str) -> Any:
         client = self.cenmigDB.connect_mongodb()
         db = client['sequence']
         fs = GridFS(db)
@@ -207,7 +203,7 @@ class cenmigDBGridFS:
         client.close()
         return file_id
 
-    def get_item_from_db(self,file_name: str,location: Path) -> bool:
+    def get_item_from_db(self,file_name: str,location: str) -> bool:
         client = self.cenmigDB.connect_mongodb()
         db = client['sequence']
         fs = GridFS(db)

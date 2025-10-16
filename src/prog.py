@@ -1,19 +1,21 @@
 import subprocess
 import os
 import sys
+
 class checkprograms:
     def __init__(self):
-        self.listLibUsed = ['stringMLST','krocus']
-        self.listPrograms = ['prog/edirect/esearch','~/down_sea/sratoolkit/bin/prefetch','~/down_sea/sratoolkit/bin/fasterq-dump','~/down_sea/sratoolkit/bin/fastq-dump','~/down_sea/datasets','~/down_sea/dataformat']
+        self.listLibUsed = ['stringMLST.py','krocus']
+
+        self.listPrograms = ['prog/edirect/esearch','prog/sratoolkit/bin/prefetch','prog/sratoolkit/bin/fasterq-dump','prog/sratoolkit/bin/fastq-dump',
+                             'prog/datasets','prog/dataformat']
 
     def is_program_installed(self, package: str) -> bool:
         try:
-            __import__(package)
-            return True
-        except ImportError:
-            return False
-            
-
+            subprocess.run(["which", package], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return True  # Run the "which" command to check if the program is in the system's PATH
+        except subprocess.CalledProcessError:
+            return False  # The "which" command will return a non-zero exit status if the program is not found
+                
     def is_program_available(self, program_path):
         return os.path.exists(program_path)
         
@@ -35,9 +37,8 @@ class checkprograms:
 class downloadPrograms:
     def __init__(self):
         pass
-
     def downloadEsearch(self):
-        os.system("source prog/esearch.sh")
+        os.system("prog/esearch.sh")
 
     def downloadSRATools(self):
-        os.system("source prog/sratool.sh")
+        os.system("prog/sratool.sh")

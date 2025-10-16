@@ -8,7 +8,6 @@ import pycountry
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from pathlib import Path
 from multiprocessing import Pool
 from src.errors import errorsLog
 from typing import Dict, Any,List,Tuple
@@ -117,9 +116,12 @@ class metadataSra:
     #     return df_all_srainfo
     # More memory-efficient?
     def merge_srainfo(self) -> pd.DataFrame:
-        srainfo_path = os.path.join(self.main, '.raw_metadata/*.srainfo')
+        srainfo_path = os.path.join(self.main, 'raw_metadata/*.srainfo')
         all_srainfo_file_path = glob.glob(srainfo_path)
-
+        if len(all_srainfo_file_path) == 0:
+            if self.verbose:
+                print("No SRA info Found!")
+            return pd.DataFrame({'Run':[]})
         def gen():
             with Pool(processes=self.coreUsed) as pool:
                 for df in tqdm(pool.imap(self.process_srainfo_file, all_srainfo_file_path),
@@ -177,7 +179,7 @@ class metadataPathogen:
     def __init__(self):
         self.errorsLogFun = errorsLog()
         self.main = os.path.dirname(os.path.realpath(__file__)) + '/'
-        self.pathogen_metadata_path = os.path.join(self.main,'.raw_metadata/*metadata.csv')
+        self.pathogen_metadata_path = os.path.join(self.main,'raw_metadata/*metadata.csv')
         with open("config.json", 'r') as f:
             config = json.load(f)
             config = config["processMetadata"]
@@ -221,7 +223,7 @@ class metadataPathogen:
 
     # merge bio assembly metadata from bioproject
     def merge_bio_assembly(self) -> pd.DataFrame:
-        bio_assembly_file = os.path.join(self.main,'.raw_metadata/*_assembly.csv')
+        bio_assembly_file = os.path.join(self.main,'raw_metadata/*_assembly.csv')
         all_bioproject_assembly_file_path = glob.glob(bio_assembly_file)
         list_all_bio_assembly = []
         if len(all_bioproject_assembly_file_path) > 0:
@@ -240,7 +242,7 @@ class metadataPathogen:
             df_all_bioproject_assembly = df_all_bioproject_assembly[df_all_bio_ass_col]
             df_all_bioproject_assembly = df_all_bioproject_assembly.rename(columns = {'Assembly Accession':'asm_acc','Annotation Release Date':'ReleaseDate','Assembly Sequencing Tech':'Platform','Assembly BioSample Sample Identifiers Value':'BiosampleIdentifiers'})
         else:
-            df_all_bioproject_assembly = pd.DataFrame()
+            df_all_bioproject_assembly = pd.DataFrame({'asm_acc':[]})
         return df_all_bioproject_assembly
 
 class processMeta:
@@ -261,7 +263,10 @@ class processMeta:
         self.saveMetadataFile = config["saveMetadataFile"]
         self.saveInhouseFile = config["saveInhouseFile"]
         self.inhouseSeqDir = config["inhouseSeqDir"]
-
+        self.DownloadSRAPathogen = config["DownloadSRAPathogen"]
+        saveMetaPath = os.path.join(self.main,"result_metada")
+        if not os.path.exists(saveMetaPath):
+            os.mkdir(saveMetaPath)
     # connect CENMIG Database
     def get_old_data(self) -> Tuple[List,List,List]:
         client = self.cenmigDB.connect_mongodb()
@@ -344,7 +349,6 @@ class processMeta:
         df_all_new_metadata_update_country_subregion = pd.merge(df_all_new_metadata_update_country, cn_geo, on='geo_loc_name_country_fix',how='left', indicator=False)
         return df_all_new_metadata_update_country_subregion
 
-
     # Use pycountry for get correct country name and replace name is not correct
     def dict_for_correct_country(self,countryname_fix: List) -> Dict:
         countryname_set = set(countryname_fix)
@@ -352,7 +356,7 @@ class processMeta:
         country_dict = {}
         for data in countryname_set:
             if type(data) != float:
-                match_countries = difflib.get_close_matches(data.upper(), country_names)
+                match_countries = difflib.get_close_matches(data.upper(), country_names)  # type: ignore
                 if len(match_countries) > 0:
                     match = match_countries[0]
                 elif len(match_countries) == 0:
@@ -419,7 +423,8 @@ class processMeta:
         #new sra from metadata pathogen
         new_sra_from_pathogen_metadata = df_new_pathogen_metada.dropna(subset=['Run'])
         list_sra_new_pathogen = new_sra_from_pathogen_metadata['Run'].values.tolist()
-        download_meta.download_sra_by_pathogen(list_sra_new_pathogen)
+        if self.DownloadSRAPathogen:
+            download_meta.download_sra_by_pathogen(list_sra_new_pathogen)
         df_new_sra_from_pathogen = meta_sra.update_new_sra_from_pathogen(list_sra_new_pathogen,df_new_assembly_n_sra_from_metadata)
         print('--SRA from Pathogen File--')
         print(df_new_sra_from_pathogen)
@@ -439,7 +444,7 @@ class processMeta:
             bioproject_set_new = set(df_all_sra_metada['BioProject'].dropna())
             download_meta.multi_download_sra(bioproject_set_new)
         df_all_srainfo = meta_sra.merge_srainfo()
-            # Merge sra metadata and srainfo data
+        # Merge sra metadata and srainfo data
         update_df_all_sra_metada = pd.merge(df_all_sra_metada,df_all_srainfo,how='left', on='Run')
         # Add pathogen data to sra metadata
         df_all_sra_add_pathogen = self.add_pathogen_to_sra_metadata(update_df_all_sra_metada,df_new_pathogen_metada)

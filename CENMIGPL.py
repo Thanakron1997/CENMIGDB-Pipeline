@@ -19,6 +19,7 @@ from src.download_metadata import download_all_metadata
 from src.process_metadata import processMeta
 from src.process_cenmigDB import cenmigDBMetaData
 from src.process_sequence import processAllSeqData
+from src.prog import checkprograms, downloadPrograms
 from src.update_prog_db import updateResfinder,updateStringMLSTDB,updateKrocus
 # =============================================================================
 # Function
@@ -61,15 +62,14 @@ def metadata_ncbi(option,file_meta = None):
             config = json.load(f)
             config = config["processMetadata"]
         saveMetadataFile = config["saveMetadataFile"]
-        if os.path.exists(saveMetadataFile):
+        if file_meta:
+            if os.path.exists(file_meta):
+                df_metadata_ncbi = pd.read_csv(file_meta,low_memory=False)
+        elif os.path.exists(saveMetadataFile):
             df_metadata_ncbi = pd.read_csv(saveMetadataFile,low_memory=False)
         else:
             print(f"No metadata file : {saveMetadataFile}")
-            if file_meta:
-                if os.path.exists(file_meta):
-                    df_metadata_ncbi = pd.read_csv(saveMetadataFile,low_memory=False)
-            else:
-                sys.exit("No metadata file!")   
+            sys.exit("No metadata file!")   
         process_seq.process(df_metadata_ncbi)
 
     elif option.lower() == "download":
@@ -82,7 +82,7 @@ def metadata_ncbi(option,file_meta = None):
         
     elif option.lower() == "process_meta":
         process_meta = processMeta()
-        _ = process_meta.process()
+        df_metadata_ncbi = process_meta.process()
         print("Files Metadata will save at -> result_metada folder")
     else:
         print("No Options argument")
@@ -121,68 +121,179 @@ def update_prog_db():
     updateKrocus().update()
     print("All update competed!")
 
-
+def setupProgram():
+    checkprograms().check(install=True)
+    download = downloadPrograms()
+    download.downloadEsearch()
+    download.downloadSRATools()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='This program is using for interact with the CENMIGDB via command-line \n'
-                                    'For Download metadata : http://10.9.63.33:8080/',formatter_class=RawTextHelpFormatter)
-    ## Build Sub-parser for each function
-    subparsers = parser.add_subparsers(dest='command') # dest = 'command' > specify object name command
-    
-    ### Add New Metadata from NCBI
-    des_add_new_ncbi = 'Download and add new metadata from NCBI to CENMIGDB - No optional arguments'
-    add_new_ncbi = subparsers.add_parser('add_new_ncbi', help='Download and add new metadata from NCBI to CENMIGDB', description = des_add_new_ncbi)
-    add_new_ncbi.add_argument("--options_metadata", "-m", help="Run all pipeline only download or use downloaded data option: all/download_only/use_downloaded/make_meta") 
+    parser = argparse.ArgumentParser(
+        description=(
+            "This program is a pipeline for management data in cenmigDB.\n\n"
+            "For more information or to download metadata, visit:\n"
+            "  http://10.9.63.33:8080/"
+        ),
+        formatter_class=RawTextHelpFormatter
+    )
 
-    ### Add New Metadata from Inhouse
-    des_add_new_inhouse = 'Add new metadata from In-house to CENMIGDB\n*Please check columns name in CSV file before run'
-    add_new_inhouse = subparsers.add_parser('add_new_inhouse', help='Add new metadata from In-House to CENMIGDB\n'
-                                            'Options:\n'
-                                            '--csv_in_filename, -i\t Specific csv input filename can use dirct path or only filename\n'
-                                            '--csv_out_filename, -o\t Specific csv output filename can use dirct path or only filename\n ', description = des_add_new_inhouse)
-    add_new_inhouse.add_argument("--csv_in_filename", "-i", help="Specific csv input filename can use dirct path or only filename") 
-    # add_new_inhouse.add_argument("--csv_out_filename","-o",help="Specific csv output filename can use dirct path or only filename")
-    add_new_inhouse.add_argument("--pass_metadata","-m",help="Pass function for add cenmigID and fixing metadata option: yes/no")
+    # ----------------------------------------------------------------------
+    # Create Subparsers
+    # ----------------------------------------------------------------------
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    ### Update_DB
-    update_db_help = 'Update metadata in CENMIGDB\n *Please Check your data that you want to update before run'
-    update_metadata = subparsers.add_parser('update_metadata', help='Update metadata in CENMIGDB\n'
-                                'Options:\n'
-                                    '--csv_in_filename, -i\t Specific csv input filename can use dirct path or only filename\n ',description = update_db_help )
-    update_metadata.add_argument("--csv_in_filename", "-i", help="Specific csv input filename can use dirct path or only filename", default= True) 
+    # ----------------------------------------------------------------------
+    # 1. Add New Metadata from NCBI
+    # ----------------------------------------------------------------------
+    des_add_new_ncbi = (
+        "Download and add new metadata from NCBI to CENMIGDB.\n\n"
+        "Options:\n"
+        "  --option, -m          Specify which part of the pipeline to run:\n"
+        "                        all           Run the full pipeline\n"
+        "                        process_meta  Process only metadata\n"
+        "                        process_seq   Process only sequence data\n"
+        "                        download      Only download raw files\n\n"
+        "  --csv_in_filename, -i Provide a manual metadata CSV input file (optional)"
+    )
 
-    ### Delete_DB
-    delete_db_help = 'Delete metadata in CENMIGDB\n*Please check your data that you want to delete before run'
-    delete_metadata = subparsers.add_parser('delete_metadata', help='Delete metadata in CENMIGDB\n'
-                                'Options:\n'
-                                    '--csv_in_filename, -i\t Specific csv input filename can use dirct path or only filename\n ',description = delete_db_help )
-    delete_metadata.add_argument("--csv_in_filename", "-i", help="Specific csv input filename can use dirct path or only filename", default= True)
+    add_new_ncbi = subparsers.add_parser(
+        "ncbi",
+        help="Download and add new metadata from NCBI to CENMIGDB",
+        description=des_add_new_ncbi,
+        formatter_class=RawTextHelpFormatter
+    )
+    add_new_ncbi.add_argument(
+        "--option", "-m",
+        help="Pipeline mode: all | process_meta | process_seq | download"
+    )
+    add_new_ncbi.add_argument(
+        "--csv_in_filename", "-i",
+        help="Specify manual metadata CSV input file"
+    )
 
-    ### Update_database_mlst
-    update_database_mlst_help = 'Update MLST database\n*Please check your data that you want to delete before run'
-    up_db_mlst = subparsers.add_parser('update_mlst_resfinder_database', help='Update mlst database\n',description = update_database_mlst_help )
+    # ----------------------------------------------------------------------
+    # 2. Add New Metadata from In-house
+    # ----------------------------------------------------------------------
+    des_add_new_inhouse = (
+        "Add new metadata from In-house to CENMIGDB.\n"
+        "*Please check column names in the CSV file before running.\n\n"
+        "Options:\n"
+        "  --csv_in_filename, -i   Specify CSV input filename (path or name)\n"
+        "  --option, -m            all          Run full process\n"
+        "                            process_seq  Skip creating new CENMIG IDs for existing metadata"
+    )
+
+    add_new_inhouse = subparsers.add_parser(
+        "inhouse",
+        help="Add new metadata from In-house to CENMIGDB",
+        description=des_add_new_inhouse,
+        formatter_class=RawTextHelpFormatter
+    )
+    add_new_inhouse.add_argument(
+        "--csv_in_filename", "-i",
+        help="Specify CSV input filename (path or name)"
+    )
+    add_new_inhouse.add_argument(
+        "--option", "-m",
+        help="Option: all | process_seq"
+    )
+
+    # ----------------------------------------------------------------------
+    # 3. Update Database
+    # ----------------------------------------------------------------------
+    update_db_help = (
+        "Update metadata in CENMIGDB.\n"
+        "*Please check your data carefully before running.\n\n"
+        "Options:\n"
+        "  --csv_in_filename, -i   Specify CSV input file (path or name)"
+    )
+
+    update_metadata = subparsers.add_parser(
+        "update",
+        help="Update metadata in CENMIGDB",
+        description=update_db_help,
+        formatter_class=RawTextHelpFormatter
+    )
+    update_metadata.add_argument(
+        "--csv_in_filename", "-i",
+        help="Specify CSV input filename (path or name)",
+        default=True
+    )
+
+    # ----------------------------------------------------------------------
+    # 4. Delete from Database
+    # ----------------------------------------------------------------------
+    delete_db_help = (
+        "Delete metadata from CENMIGDB.\n"
+        "*Please verify your data before running.\n\n"
+        "Options:\n"
+        "  --csv_in_filename, -i   Specify CSV input file (path or name)"
+    )
+
+    delete_metadata = subparsers.add_parser(
+        "delete",
+        help="Delete metadata in CENMIGDB",
+        description=delete_db_help,
+        formatter_class=RawTextHelpFormatter
+    )
+    delete_metadata.add_argument(
+        "--csv_in_filename", "-i",
+        help="Specify CSV input filename (path or name)",
+        default=True
+    )
+
+    # ----------------------------------------------------------------------
+    # 5. Update MLST Database
+    # ----------------------------------------------------------------------
+    update_database_mlst_help = "Update MLST database used in the pipeline."
+
+    up_db_mlst = subparsers.add_parser(
+        "updatedb",
+        help="Update MLST database",
+        description=update_database_mlst_help
+    )
+
+    # ----------------------------------------------------------------------
+    # 6. Setup Dependencies
+    # ----------------------------------------------------------------------
+    setup_help = "Install required external programs for the CENMIG pipeline."
+
+    setup_parser = subparsers.add_parser(
+        "setup",
+        help="Install required programs for the pipeline",
+        description=setup_help
+    )
+
+    # ----------------------------------------------------------------------
+    # Parse arguments
+    # ----------------------------------------------------------------------
     args = parser.parse_args()
+
 
     # =============================================================================
     #  Link argument to execute function
     # =============================================================================
 
-    if args.command == 'add_new_ncbi':
-        not_download = args.options_metadata
+    if args.command == 'ncbi':
+        option = args.option
+        csv_file_in = args.csv_in_filename
         start = time.time()
-        add_new_ncbi_metadata(not_download)
+        if csv_file_in == None:
+            metadata_ncbi(option)
+        else:
+            metadata_ncbi(option,csv_file_in)
         end = time.time()
         total_time = round((end - start)/(60*60),2)
         print("Time taken: {} hours".format(total_time))
         
-    elif args.command == 'add_new_inhouse':
+    elif args.command == 'inhouse':
         start = time.time()
         csv_file_in = args.csv_in_filename
-        run_metadata = args.pass_metadata
+        run_metadata = args.option
         if csv_file_in == None:
-            print('No CSV Argument Please in add file name...')
+            sys.exit('No CSV Argument Please in add file name...')
         else:
-            add_new_inhouse_metadata(csv_file_in,run_metadata)
+            inhouse_metadata(csv_file_in,run_metadata)
         end = time.time()
         total_time = round((end - start)/(60*60),2)
         print("Time taken: {} hours".format(total_time))
@@ -191,7 +302,7 @@ if __name__ == "__main__":
         start = time.time()
         csv_file_in = args.csv_in_filename
         if csv_file_in == None:
-            print('No CSV Argument Please in add file name...')
+            sys.exit('No CSV Argument Please in add file name...')
         else:
             update_cenmig_database(csv_file_in)
         end = time.time()
@@ -202,16 +313,23 @@ if __name__ == "__main__":
         start = time.time()
         csv_file_delete = args.csv_in_filename
         if csv_file_delete == None:
-            print('No CSV Argument Please in add file name...')
+            sys.exit('No CSV Argument Please in add file name...')
         else:
             delete_metadata_in_cenmigdb(csv_file_delete)
         end = time.time()
         total_time = round((end - start)/(60*60),2)
         print("Time taken: {} hours".format(total_time))
 
-    elif args.command == 'update_mlst_resfinder_database':
+    elif args.command == 'updatedb':
         start = time.time()
         end = time.time()
+        update_prog_db()
+        total_time = round((end - start)/(60*60),2)
+        print("Time taken: {} hours".format(total_time))
+    elif args.command == 'setup':
+        start = time.time()
+        end = time.time()
+        setupProgram()
         total_time = round((end - start)/(60*60),2)
         print("Time taken: {} hours".format(total_time))
     else:
