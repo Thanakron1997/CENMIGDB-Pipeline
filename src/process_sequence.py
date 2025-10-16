@@ -210,7 +210,8 @@ class processAssemblyData:
             id_i = str(row['asm_acc'])
             organism_i = row['Organism']
             output_dir_i = os.path.join(self.tmpProcessDir,id_i)
-
+            if not os.path.exists(output_dir_i):
+                os.mkdir(output_dir_i)
             seq_file = self.download.download_seq_assembly(id_i,output_dir_i)
             if seq_file:
                 df_mlst_result = self.findst.run_mlst_assembly_seq(id_i,organism_i,seq_file,output_dir_i)
@@ -249,7 +250,7 @@ class processAssemblyData:
         pool = multiprocessing.Pool(processes=self.coreUsed, initializer=self.worker_func, initargs=(job_queue, result_queue)) 
         df_index = df.index.tolist() # Get the DataFrame index as a list
         jobs = [(index_, df.loc[index_]) for index_ in df_index] # Enqueue jobs (each job is a tuple of sra_index and df_sra)
-        with tqdm(total=len(jobs), desc="Processing sra data: ", ncols=70) as pbar:
+        with tqdm(total=len(jobs), desc="Processing Assembly data: ", ncols=70) as pbar:
             for job in jobs: # add job to queue the job will start but can add job
                 job_queue.put(job)
             for _ in range(self.coreUsed): # Add sentinel values to signal workers to exit (add last job with None for let process can exit)
@@ -370,13 +371,14 @@ class processAllSeqData:
         df_all_mlst = pd.concat(list_mlst, ignore_index=True)
         df_all_resfinder = pd.concat(list_resistance, ignore_index=True)
         df_all_pointfinder = pd.concat(list_pointmultation,ignore_index=True)
-        df_all_tb_profiler = pd.concat(list_tb_profiler,ignore_index=True)
         df_all_one_line_resfinder = pd.concat(list_resistance_one_line,ignore_index=True)
         df_all_one_line_pointfinder = pd.concat(list_pointmultation_one_line,ignore_index=True)
         df_all_mlst.to_csv(os.path.join(self.main,self.mlstFileResult),index=False)
         df_all_resfinder.to_csv(os.path.join(self.main,self.resistanceFileResult),index=False)
         df_all_pointfinder.to_csv(os.path.join(self.main,self.pointMultationFileResult),index=False)
-        df_all_tb_profiler.to_csv(os.path.join(self.main,self.tbProfilerFileResult),index=False)
         df_all_one_line_resfinder.to_csv(os.path.join(self.main,self.resistanceOneLineFileResult),index=False)
         df_all_one_line_pointfinder.to_csv(os.path.join(self.main,self.pointMultationOneLineFileResult),index=False)
+        if len(list_tb_profiler) > 0:
+            df_all_tb_profiler = pd.concat(list_tb_profiler,ignore_index=True)
+            df_all_tb_profiler.to_csv(os.path.join(self.main,self.tbProfilerFileResult),index=False)
 

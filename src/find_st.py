@@ -140,7 +140,7 @@ class findST:
    
     def run_mlst_check(self,seq_file: str, file_mlst_output_i: str, id_i: str,mlst_check_scheme: str) -> str | None:
         try:
-            cmd_mlst_fasta = f'docker run --rm --user {self.uidDocker}:{+self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'sangerpathogens/mlst_check get_sequence_type -s "{mlst_check_scheme}" -o {file_mlst_output_i} {seq_file}'
+            cmd_mlst_fasta = f'docker run --rm --user {self.uidDocker}:{self.gidDocker} -v '+ "${HOME}:${HOME} -w ${PWD} " + f'sangerpathogens/mlst_check get_sequence_type -s "{mlst_check_scheme}" -o {file_mlst_output_i} {seq_file}'
             result_mlst_check = subprocess.run(cmd_mlst_fasta,shell=True,capture_output=True)
             if self.keepLog:
                     self.errorsLogFun.error_logs(cmd_mlst_fasta,result_mlst_check)
