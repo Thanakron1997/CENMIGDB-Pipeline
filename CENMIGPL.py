@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import pandas as pd
 import argparse
 import time
@@ -6,10 +5,6 @@ import os
 import json 
 import sys
 from argparse import RawTextHelpFormatter
-# import os, sys
-# currentdir = os.path.dirname(os.path.realpath(__file__))
-# packagesdir = os.path.join(currentdir, "cenmigdb_function")
-# sys.path.append(packagesdir)
 
 # =============================================================================
 # Module 
