@@ -39,4 +39,13 @@ source env/bin/activate
 
 # Install required Python packages
 pip install -r requirements.txt
+
+# update url for krocus
+vim env/lib/python3.12/site-packages/krocus/PubmlstGetter.py
+# line 30 to xml_url = 'https://pubmlst.org/static/data/dbases.xml'
+
+# setup program 
+python CENMIGPL.py setup
+
+# setup 
 ```
