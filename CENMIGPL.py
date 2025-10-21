@@ -126,8 +126,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
             "This program is a pipeline for management data in cenmigDB.\n\n"
-            "For more information or to download metadata, visit:\n"
-            "  http://10.9.63.33:8080/"
         ),
         formatter_class=RawTextHelpFormatter
     )

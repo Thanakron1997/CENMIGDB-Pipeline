@@ -47,5 +47,6 @@ vim env/lib/python3.12/site-packages/krocus/PubmlstGetter.py
 # setup program 
 python CENMIGPL.py setup
 
-# setup 
+# setup MLST database
+python CENMIGPL.py updatedb
 ```
