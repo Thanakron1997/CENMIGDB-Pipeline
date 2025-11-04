@@ -228,3 +228,4 @@ src/result_metada/
 src/resfinder_db/
 src/tmp/
 src/tmpProcess/
+activate.sh
