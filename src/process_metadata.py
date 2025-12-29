@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import time
 import json
@@ -8,6 +9,7 @@ import pycountry
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+from datetime import datetime 
 from multiprocessing import Pool
 from src.errors import errorsLog
 from typing import Dict, Any,List,Tuple
@@ -264,9 +266,32 @@ class processMeta:
         self.saveInhouseFile = config["saveInhouseFile"]
         self.inhouseSeqDir = config["inhouseSeqDir"]
         self.DownloadSRAPathogen = config["DownloadSRAPathogen"]
+        self.listOrganism = config["listOrganism"]
         saveMetaPath = os.path.join(self.main,"result_metada")
         if not os.path.exists(saveMetaPath):
             os.mkdir(saveMetaPath)
+
+    def process_date(self,date):
+        try:
+            current_year = datetime.now().year
+            lst_year = list(range(1800, current_year + 1))
+            if date and isinstance(date, (str)):
+                year_match = re.search(r'\d{4}', date)
+                if year_match:
+                    year_str = year_match.group()
+                    if int(year_str) in lst_year:
+                        return int(year_str)
+                    else:
+                        return None
+                else:
+                    return None
+            elif date in lst_year:
+                return int(date)
+            else:
+                return None
+        except:
+            return None
+        
     # connect CENMIG Database
     def get_old_data(self) -> Tuple[List,List,List]:
         client = self.cenmigDB.connect_mongodb()
@@ -458,6 +483,9 @@ class processMeta:
             df_all_bioproject_assembly = meta_pathogen.merge_bio_assembly()
             # Merge new assembly data and bioproject assembly metadata
             df_new_complete_assembly = pd.merge(df_new_assembly_select_col,df_all_bioproject_assembly,how='left', on='asm_acc')
+            if "Platform_x" in df_new_complete_assembly:
+                df_new_complete_assembly['Platform'] = (df_new_complete_assembly['Platform_x'].fillna(df_new_complete_assembly['Platform_y']))
+                df_new_complete_assembly.drop(df_new_complete_assembly.filter(regex='_(x|y)$').columns,axis=1,inplace=True)
             # Combine new sra metadata and assembly metadata
             df_all_new_metadata = pd.concat([df_all_sra_add_pathogen,df_new_complete_assembly],ignore_index=True)
         else: 
@@ -474,6 +502,9 @@ class processMeta:
         print('--All new metada for update--')
         print(df_all_new_metadata_all_update)
         df_all_new_metadata_all_update = df_all_new_metadata_all_update.copy()
+        pattern = "|".join(map(re.escape, self.listOrganism))
+        df_all_new_metadata_all_update = df_all_new_metadata_all_update[df_all_new_metadata_all_update['Organism'].str.contains(pattern, na=False)]
+        df_all_new_metadata_all_update['Collection_years'] = df_all_new_metadata_all_update['Collection_date'].apply(self.process_date)
         df_all_new_metadata_all_update['Collection_date'] = df_all_new_metadata_all_update['Collection_date'].astype('string')
         df_all_new_metadata_all_update.to_csv(self.saveMetadataFile,index=False)
         return df_all_new_metadata_all_update
@@ -487,6 +518,7 @@ class processMeta:
         df_metadata_inhouse['file_id'] = df_metadata_inhouse['file_name'].apply(self.updateDatatoMongodb)
         df_metadata_inhouse = self.update_country_all_metadata(df_metadata_inhouse)
         df_metadata_inhouse = self.ungeo_subregion(df_metadata_inhouse)
+        df_metadata_inhouse['Collection_years'] = df_metadata_inhouse['Collection_date'].apply(self.process_date)
         print('--All Metadata from In-House--')
         print(df_metadata_inhouse)
         df_metadata_inhouse = df_metadata_inhouse.astype('string')
