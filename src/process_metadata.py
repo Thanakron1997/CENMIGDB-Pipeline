@@ -134,7 +134,14 @@ class metadataSra:
         df_all_srainfo.drop_duplicates(subset=['Run'], keep='last', inplace=True)
         df_all_srainfo.reset_index(drop=True, inplace=True)
         return df_all_srainfo
-        
+    
+    def clean_missing_files(self) -> None:
+        all_file_missing_sra_path = os.path.join(self.save_missingsra_path,'missing_sra_*')
+        file_missing_sra_all = glob.glob(all_file_missing_sra_path)
+        if len(file_missing_sra_all) >0:
+            for f in file_missing_sra_all:
+                os.remove(f)
+
     # download sra metadata from pathogen metadata
     def update_new_sra_from_pathogen(self,list_sra_new_pathogen,df_new_assembly_n_sra_from_metadata) -> pd.DataFrame:
         if len(list_sra_new_pathogen) > 0:
@@ -449,6 +456,7 @@ class processMeta:
         new_sra_from_pathogen_metadata = df_new_pathogen_metada.dropna(subset=['Run'])
         list_sra_new_pathogen = new_sra_from_pathogen_metadata['Run'].values.tolist()
         if self.DownloadSRAPathogen:
+            meta_sra.clean_missing_files()
             download_meta.download_sra_by_pathogen(list_sra_new_pathogen)
         df_new_sra_from_pathogen = meta_sra.update_new_sra_from_pathogen(list_sra_new_pathogen,df_new_assembly_n_sra_from_metadata)
         print('--SRA from Pathogen File--')
