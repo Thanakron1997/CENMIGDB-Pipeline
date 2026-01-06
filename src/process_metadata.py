@@ -526,9 +526,9 @@ class processMeta:
         df_metadata_inhouse['file_id'] = df_metadata_inhouse['file_name'].apply(self.updateDatatoMongodb)
         df_metadata_inhouse = self.update_country_all_metadata(df_metadata_inhouse)
         df_metadata_inhouse = self.ungeo_subregion(df_metadata_inhouse)
+        df_metadata_inhouse = df_metadata_inhouse.astype('string')
         df_metadata_inhouse['Collection_years'] = df_metadata_inhouse['Collection_date'].apply(self.process_date)
         print('--All Metadata from In-House--')
         print(df_metadata_inhouse)
-        df_metadata_inhouse = df_metadata_inhouse.astype('string')
         df_metadata_inhouse.to_csv(self.saveInhouseFile,index=False)
         return df_metadata_inhouse
