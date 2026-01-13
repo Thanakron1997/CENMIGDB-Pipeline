@@ -75,6 +75,7 @@ class findST:
                     if len(df_mlst_raw_i) > 1:
                         df_mlst_raw_i = df_mlst_raw_i.iloc[[0]]
                 elif program == "mlst_check":
+                    file_mlst_output_i = os.path.join(file_mlst_output_i,"mlst_results.allele.csv")
                     df_mlst_raw_i = pd.read_table(file_mlst_output_i, sep = '\t')
                     df_mlst_raw_i.rename(columns={"Isolate": "cenmigID"}, inplace=True)
                     df_mlst_raw_i = df_mlst_raw_i.drop(["New ST","Contamination"], axis='columns')

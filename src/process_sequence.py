@@ -168,7 +168,7 @@ class processRawSeqData:
         pool = multiprocessing.Pool(processes=self.coreUsed, initializer=self.worker_func, initargs=(job_queue, result_queue,process_func)) 
         df_index = df.index.tolist() # Get the DataFrame index as a list
         jobs = [(index_, df.loc[index_]) for index_ in df_index] # Enqueue jobs (each job is a tuple of sra_index and df_sra)
-        with tqdm(total=len(jobs), desc="Processing sra data: ", ncols=70) as pbar:
+        with tqdm(total=len(jobs), desc="Processing sra data: ", ncols=100 ,colour="#00FF21",leave=True) as pbar:
             for job in jobs: # add job to queue the job will start but can add job
                 job_queue.put(job)
             for _ in range(self.coreUsed): # Add sentinel values to signal workers to exit (add last job with None for let process can exit)
@@ -250,7 +250,7 @@ class processAssemblyData:
         pool = multiprocessing.Pool(processes=self.coreUsed, initializer=self.worker_func, initargs=(job_queue, result_queue)) 
         df_index = df.index.tolist() # Get the DataFrame index as a list
         jobs = [(index_, df.loc[index_]) for index_ in df_index] # Enqueue jobs (each job is a tuple of sra_index and df_sra)
-        with tqdm(total=len(jobs), desc="Processing Assembly data: ", ncols=70) as pbar:
+        with tqdm(total=len(jobs), desc="Processing Assembly data: ", ncols=100, colour="#00FF21", leave=True) as pbar:
             for job in jobs: # add job to queue the job will start but can add job
                 job_queue.put(job)
             for _ in range(self.coreUsed): # Add sentinel values to signal workers to exit (add last job with None for let process can exit)

@@ -127,7 +127,7 @@ class metadataSra:
         def gen():
             with Pool(processes=self.coreUsed) as pool:
                 for df in tqdm(pool.imap(self.process_srainfo_file, all_srainfo_file_path),
-                            total=len(all_srainfo_file_path), desc="merging srainfo", ncols=70):
+                            total=len(all_srainfo_file_path), desc="merging srainfo", ncols=70,colour="#00FF21",leave=True):
                     yield df
 
         df_all_srainfo = pd.concat(gen(), ignore_index=True)
@@ -208,7 +208,7 @@ class metadataPathogen:
         df_pathogen_metada = pd.DataFrame()
         file_pathogen_i = glob.glob(self.pathogen_metadata_path)
         with Pool(processes=self.coreUsed) as pool:
-            list_all_pathogen_metadata = list(tqdm(pool.imap(self.process_pathogen_metada, file_pathogen_i), total=len(file_pathogen_i), desc="merging pathogen", ncols=70))
+            list_all_pathogen_metadata = list(tqdm(pool.imap(self.process_pathogen_metada, file_pathogen_i), total=len(file_pathogen_i), desc="merging pathogen", ncols=70,colour="#00FF21",leave=True))
         df_pathogen_metada = pd.concat(list_all_pathogen_metadata, ignore_index=True)
         df_pathogen_metada = df_pathogen_metada.reset_index(drop=True)
         df_pathogen_no_dup = df_pathogen_metada.drop_duplicates(keep= 'first')
