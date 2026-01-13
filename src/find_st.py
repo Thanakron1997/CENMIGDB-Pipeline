@@ -174,7 +174,7 @@ class findST:
         Run MLST by MLST Check
         """
 
-        file_mlst_output_i = os.path.join(output_dir_i,f"mlst_result_{id_i}.txt")
+        file_mlst_output_i = os.path.join(output_dir_i,f"mlst_result_{id_i}")
         scheme = self.get_scheme(organism_i)
         program = self.run_mlst_check(seq_file=seq_file,file_mlst_output_i=file_mlst_output_i,id_i=id_i,mlst_check_scheme=scheme["mlst_check_scheme"])
         df_mlst_result = self.result_mlst(program=program,file_mlst_output_i=file_mlst_output_i,id_i=id_i)
