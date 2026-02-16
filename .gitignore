@@ -229,3 +229,4 @@ src/resfinder_db/
 src/tmp/
 src/tmpProcess/
 activate.sh
+.continue/
