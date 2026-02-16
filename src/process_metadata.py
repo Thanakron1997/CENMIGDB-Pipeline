@@ -166,8 +166,7 @@ class metadataSra:
                     except Exception as e:
                         if self.keepLog:
                             self.errorsLogFun.error_logs_try("Error in Delete row == Run:  ",e)
-                    columns_select_for_missing_sra = ['Run','ReleaseDate','Experiment','LibraryStrategy','LibrarySelection','LibrarySource','LibraryLayout','Platform','Model','BioProject','BioSample','ScientificName','SampleName','CenterName']
-                    df_new_sra_from_pathogen = df_new_sra_from_pathogen[columns_select_for_missing_sra]
+                    df_new_sra_from_pathogen = df_new_sra_from_pathogen[self.columnSelectSRA]
                     if df_new_sra_from_pathogen['Run'].isin(df_new_assembly_n_sra_from_metadata['Run'].values.tolist()).any(): # check if sra number from assembly in missing sra 
                         df_new_assembly_for_addsembly = df_new_assembly_n_sra_from_metadata[['Run','asm_acc']] # add assembly number to sra
                         df_new_assembly_for_addsembly = df_new_assembly_for_addsembly.rename(columns = {'asm_acc':'AssemblyName'}) ####
@@ -198,6 +197,7 @@ class metadataPathogen:
         self.coreUsed = config["coreUsed"]
         self.listSpecies = config["listSpecies"]
         self.pathogenSelect = config["pathogenSelect"]
+        self.columnBioAssembly = config["columnBioAssembly"]
 
     # founction for multiprocess
     def process_pathogen_metada(self,pathogen_metadata_i: str) -> pd.DataFrame:
@@ -247,8 +247,7 @@ class metadataPathogen:
             df_all_bioproject_assembly = pd.concat(list_all_bio_assembly, ignore_index=True)
             df_all_bioproject_assembly.drop_duplicates(subset = ['Assembly Accession'] ,keep='first', inplace=True)
             df_all_bioproject_assembly = df_all_bioproject_assembly.reset_index(drop=True) # Reset index before filterout
-            df_all_bio_ass_col = ['Assembly Accession','Annotation Release Date','Assembly Sequencing Tech','Assembly BioSample Sample Identifiers Value']
-            df_all_bioproject_assembly = df_all_bioproject_assembly[df_all_bio_ass_col]
+            df_all_bioproject_assembly = df_all_bioproject_assembly[self.columnBioAssembly]
             df_all_bioproject_assembly = df_all_bioproject_assembly.rename(columns = {'Assembly Accession':'asm_acc','Annotation Release Date':'ReleaseDate','Assembly Sequencing Tech':'Platform','Assembly BioSample Sample Identifiers Value':'BiosampleIdentifiers'})
         else:
             df_all_bioproject_assembly = pd.DataFrame({'asm_acc':[]})
@@ -274,6 +273,7 @@ class processMeta:
         self.inhouseSeqDir = config["inhouseSeqDir"]
         self.DownloadSRAPathogen = config["DownloadSRAPathogen"]
         self.listOrganism = config["listOrganism"]
+        self.columnPathogen = config["columnPathogen"]
         saveMetaPath = os.path.join(self.main,"result_metada")
         if not os.path.exists(saveMetaPath):
             os.mkdir(saveMetaPath)
@@ -418,8 +418,7 @@ class processMeta:
        
     # add pathogen metadata to sra
     def add_pathogen_to_sra_metadata(self,update_df_all_sra_metada: pd.DataFrame,df_new_pathogen_metada: pd.DataFrame) -> pd.DataFrame:
-        pathogem_col = ['Run','asm_level','asm_stats_contig_n50','asm_stats_length_bp','asm_stats_n_contig','assembly_method','AST_phenotypes','AMR_genotypes','AMR_genotypes_core','stress_genotypes','amrfinder_version','refgene_db_version','amrfinder_analysis_type']
-        df_pathogen_select_col = df_new_pathogen_metada[pathogem_col]
+        df_pathogen_select_col = df_new_pathogen_metada[self.columnPathogen]
         df_sra_add_pathogen = pd.merge(update_df_all_sra_metada,df_pathogen_select_col,how='left', on='Run')
         df_sra_rename_col = {'AssemblyName':'asm_acc','ScientificName' : 'Organism','CenterName' : 'Center_Name','SampleName':'Sample_Name'}
         df_sra_add_pathogen = df_sra_add_pathogen.rename(columns = df_sra_rename_col)
