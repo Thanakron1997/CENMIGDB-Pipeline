@@ -28,12 +28,13 @@ class metadataSra:
         self.verbose = config["verbose"]
         self.keepLog = config["keepLog"]
         self.columnDict = config["columnDict"]
+        self.columnSelectSRA = config["columnSelectSRA"]
         self.coreUsed = config["coreUsed"]
         self.reDownload = config["reDownload"]
 
     def metadata_from_sraruntable(self) -> Tuple[pd.DataFrame, Any | List]:
         file_srarun_all = glob.glob(self.sraruntable_path)
-        columns_select_for_srarun = ['Run','ReleaseDate','AssemblyName','Experiment','LibraryStrategy','LibrarySelection','LibrarySource','LibraryLayout','Platform','Model','BioProject','BioSample','ScientificName','SampleName','CenterName']
+        columns_select_for_srarun = self.columnSelectSRA
         df_srarun_list = []
         for i in file_srarun_all:
             try:
@@ -194,7 +195,6 @@ class metadataPathogen:
             config = config["processMetadata"]
         self.verbose = config["verbose"]
         self.keepLog = config["keepLog"]
-        self.columnDict = config["columnDict"]
         self.coreUsed = config["coreUsed"]
         self.listSpecies = config["listSpecies"]
         self.pathogenSelect = config["pathogenSelect"]
