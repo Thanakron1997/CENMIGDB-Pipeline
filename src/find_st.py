@@ -47,7 +47,7 @@ class findST:
     def result_mlst(self,program: str | None ,file_mlst_output_i: str,id_i:str) -> pd.DataFrame:
         try:
             df_mlst_raw_i = pd.DataFrame()
-            if os.path.isfile(file_mlst_output_i):
+            if os.path.exists(file_mlst_output_i):
                 if program == "krocus":
                     dict_result_krocus = {}
                     dict_result_krocus["cenmigID"] = id_i
