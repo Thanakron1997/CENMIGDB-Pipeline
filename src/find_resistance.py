@@ -137,16 +137,21 @@ class findResistance:
                 df_resfinder_line_i = df_resfinder_line_i.add_suffix('_drug_class_by_resfinder')
                 df_resfinder_line_i = df_resfinder_line_i.rename(columns=lambda x: x.replace(' ', '_'))
                 df_resfinder_line_i.insert(0, 'cenmigID', id_i)
+                df_resfinder_line_i['resfinder_run_date'] = datetime.datetime.now().date()
                 df_resfinder_line_i['resfinder_version'] = software_version
                 df_resfinder_line_i['resfinder_db_version'] = resfinder_db_version
             else:
                 df_resfinder_line_i = pd.DataFrame([{'cenmigID':id_i}])
+                df_resfinder_line_i['resfinder_run_date'] = datetime.datetime.now().date()
                 df_resfinder_line_i['resfinder_version'] = software_version
                 df_resfinder_line_i['resfinder_db_version'] = resfinder_db_version
         except Exception as e:
             if self.keepLog:
                 self.errorsLogFun.error_logs_try(f"Error in process to_one_line_resfinder_result resfinder result : {id_i}",e)
-            df_resfinder_line_i = pd.DataFrame()
+            df_resfinder_line_i = pd.DataFrame([{'cenmigID':id_i}])
+            df_resfinder_line_i['resfinder_run_date'] = datetime.datetime.now().date()
+            df_resfinder_line_i['resfinder_version'] = "Error"
+            df_resfinder_line_i['resfinder_db_version'] = resfinder_db_version
         try: # for point_mutation
             if 'Resistance' in df_pointfinder_raw_i.columns:
                 df_pointfinder_line_i = df_pointfinder_raw_i.groupby('Resistance').agg({'Mutation': ', '.join}).transpose()
@@ -161,7 +166,8 @@ class findResistance:
         except Exception as e:
             if self.keepLog:
                 self.errorsLogFun.error_logs_try(f"Error in process to_one_line_resfinder_result pointfinder result : {id_i}",e)
-            df_pointfinder_line_i = pd.DataFrame()
+            df_pointfinder_line_i =  pd.DataFrame([{'cenmigID':id_i}])
+            df_pointfinder_line_i['pointfinder_db_version'] = "Error"
         return df_resfinder_line_i, df_pointfinder_line_i
     
     def result_tbprofiler(self,output_dir: str,id_i: str) -> pd.DataFrame:
