@@ -65,8 +65,8 @@ class findST:
                             allele_i = re.findall("[a-zA-Z]+",i)[0]
                             allele_locat = re.findall(r"\d+", i)[0]
                             dict_result_krocus[allele_i] = allele_locat
-                    df_sra_mlst_raw_i = pd.DataFrame([dict_result_krocus])
-                    df_sra_mlst_raw_i['mlst_run_date'] = datetime.datetime.now().date()
+                    df_mlst_raw_i = pd.DataFrame([dict_result_krocus])
+                    df_mlst_raw_i['mlst_run_date'] = datetime.datetime.now().date()
                 elif program == "stringmlst":
                     df_mlst_raw_i = pd.read_table(file_mlst_output_i,sep='\t')
                     df_mlst_raw_i.insert(0, 'cenmigID', id_i)
