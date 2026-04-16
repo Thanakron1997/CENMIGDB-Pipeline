@@ -203,12 +203,30 @@ class metadataPathogen:
     def process_pathogen_metada(self,pathogen_metadata_i: str) -> pd.DataFrame:
         df_i = pd.read_csv(pathogen_metadata_i, encoding="utf-8-sig", on_bad_lines='skip',low_memory=False)
         return df_i
+    
+    def select_lasteset_pathogen_metadata(self,files):
+        pattern = re.compile(r'(PDG\d+)\.(\d+)\.metadata\.csv')
+        latest_files = {}
+        for f in files:
+            name = f.split('/')[-1]
+            match = pattern.match(name)
+            if match:
+                prefix, version = match.groups()
+                version = int(version)
+
+                if prefix not in latest_files or version > latest_files[prefix][1]:
+                    latest_files[prefix] = (f, version)
+
+        result = [v[0] for v in latest_files.values()]
+
+        return result
 
     def merge_pathogen_metada(self) -> pd.DataFrame: 
         df_pathogen_metada = pd.DataFrame()
-        file_pathogen_i = glob.glob(self.pathogen_metadata_path)
+        file_pathogens = glob.glob(self.pathogen_metadata_path)
+        file_pathogens = self.select_lasteset_pathogen_metadata(files=file_pathogens)
         with Pool(processes=self.coreUsed) as pool:
-            list_all_pathogen_metadata = list(tqdm(pool.imap(self.process_pathogen_metada, file_pathogen_i), total=len(file_pathogen_i), desc="merging pathogen", ncols=70,colour="#00FF21",leave=True))
+            list_all_pathogen_metadata = list(tqdm(pool.imap(self.process_pathogen_metada, file_pathogens), total=len(file_pathogens), desc="merging pathogen", ncols=70,colour="#00FF21",leave=True))
         df_pathogen_metada = pd.concat(list_all_pathogen_metadata, ignore_index=True)
         df_pathogen_metada = df_pathogen_metada.reset_index(drop=True)
         df_pathogen_no_dup = df_pathogen_metada.drop_duplicates(keep= 'first')
